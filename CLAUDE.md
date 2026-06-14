@@ -23,10 +23,12 @@ catálogo público + panel de administración. Construido a partir del diseño
 npm run dev        # desarrollo  -> http://localhost:5173  (panel en /admin)
 npm run build      # tsc -b && vite build  (a dist/)
 npm run preview    # previsualiza el build
-npm run typecheck  # solo chequeo de tipos
+npm run typecheck  # solo chequeo de tipos (tsc -b --noEmit)
 ```
 
-> Tras cambios no triviales, corre `npm run build` para validar tipos + bundle antes de dar por terminado.
+> **No hay suite de tests ni linter configurados** (no existe `npm test`, ESLint ni
+> similar). La validación real es `npm run build`: corre `tsc -b && vite build`, así que
+> compila tipos + bundle. Córrelo tras cambios no triviales antes de dar por terminado.
 
 ## Arquitectura
 
@@ -51,14 +53,26 @@ Patrón de datos: los componentes mutan vía `services/*` y luego llaman `reload
 `CatalogContext` para refrescar. El "producto efectivo" (`src/lib/effective.ts`) calcula
 disponibilidad, stock total, etc., desde los datos crudos.
 
+**Flujo de carga (un solo punto):** `fetchCatalog()` (`src/services/catalog.ts`) arma un
+único objeto `CatalogData` (productos efectivos + categorías + slides + `config` +
+`catalogs`). Toda la UI lo consume con `useCatalog()`. Atajos del contexto:
+`publicProducts` ya filtra `active` (úsalo en vistas públicas, no `products`), y
+`productById(id)` resuelve por id. Mutar con `services/*` → `reload()` para reflejar cambios.
+
+**Estados de disponibilidad** (`effective(p).avail`, usados en toda la UI):
+`stock` (disponible) · `pocas` (stock > 0 y ≤ `min_stock`) · `agotado` (stock 0 sin
+backorder, o estado `inactivo`/`agotado`) · `pedido` (backorder/"bajo pedido" con stock 0).
+
 ## Reglas de negocio (no romper)
 
 - **Stock por producto + talla.** Los colores son visuales y NO controlan stock.
-- El inventario se descuenta **solo** al pasar una orden a **Enviado** o en una **venta
-  manual**. Cancelar una orden enviada **revierte** el stock.
+- `nat_create_order` **NO descuenta stock**: solo crea la orden (RPC pública). El descuento
+  ocurre al pasar la orden a **Enviado** (`nat_update_order_state`) o en una **venta manual**
+  (`nat_manual_sale`). Cancelar una orden enviada **revierte** el stock.
 - Si una talla llega a 0 queda agotada; si todas llegan a 0, el producto se marca agotado.
-- **El costo de compra (`product_costs`) nunca se expone al público** — RLS lo restringe a
-  usuarios autenticados. No lo muestres en vistas públicas.
+- **Datos sensibles fuera de vistas públicas:** el costo de compra (`product_costs`) está
+  restringido por RLS a usuarios autenticados — nunca lo muestres en público. El precio
+  mayorista (`mayor`) tampoco va en la tienda pública (solo retail/promo).
 - Cada cambio de stock genera un movimiento en el Kardex (no editar stock sin movimiento).
 - Las operaciones que afectan inventario son **RPCs** (`nat_create_order`,
   `nat_update_order_state`, `nat_register_movement`, `nat_adjust_stock`, `nat_manual_sale`).
