@@ -9,3 +9,8 @@ dist-ssr
 .DS_Store
 _design_reference
 .vite
+
+# Claude Code: versiona la config compartida (.claude/settings.json),
+# ignora overrides locales y caché
+.claude/settings.local.json
+.claude/*.local.json
