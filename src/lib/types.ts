@@ -151,10 +151,21 @@ export interface CarouselConfig {
   intervalSec: number;
 }
 
+export interface TiendaConfig {
+  provinciaCod: string;
+  provinciaNombre: string;
+  cantonCod: string;
+  cantonNombre: string;
+  parroquiaCod: string;
+  parroquiaNombre: string;
+  direccion: string;
+}
+
 export interface AppConfig {
   carousel: CarouselConfig;
   wa: WaConfig;
   social: SocialConfig;
+  tienda: TiendaConfig;
 }
 
 export interface Cliente {
@@ -163,8 +174,18 @@ export interface Cliente {
   apellidos: string;
   correo: string;
   celular: string;
-  ciudad: string;
+  ciudad?: string; // = nombre del cantón (compat con vistas/órdenes viejas)
   direccion: string;
+  // Zona geográfica (DPA INEC)
+  provinciaCod?: string;
+  provinciaNombre?: string;
+  cantonCod?: string;
+  cantonNombre?: string;
+  parroquiaCod?: string;
+  parroquiaNombre?: string;
+  // Entrega
+  tipoEntrega?: "servientrega" | "retiro";
+  direccionRetiro?: string; // dirección de la tienda cuando es retiro
 }
 
 export interface Pago {
@@ -209,6 +230,7 @@ export interface Order {
   canal_origen: string;
   pago: Pago;
   subtotal: number;
+  valor_envio: number;
   total: number;
   estado: string;
   observacion_interna: string;
@@ -260,8 +282,25 @@ export interface NamedItem {
   sort: number;
 }
 
-export interface CityItem extends NamedItem {
-  province_id: string | null;
+// Geografía DPA (INEC). El código es la PK natural.
+export interface Provincia {
+  codigo: string;
+  nombre: string;
+  sort: number;
+}
+export interface Canton {
+  codigo: string;
+  nombre: string;
+  provincia_cod: string;
+  valor_envio: number;
+  sort: number;
+}
+export interface Parroquia {
+  codigo: string;
+  nombre: string;
+  canton_cod: string;
+  valor_envio: number;
+  sort: number;
 }
 
 export interface MovementReasonCat extends CatItem {
@@ -278,10 +317,11 @@ export interface Catalogs {
   paymentStatuses: CatItem[];
   movementReasons: MovementReasonCat[];
   channels: CatItem[];
-  cities: CityItem[];
   banks: NamedItem[];
-  provinces: NamedItem[];
   sizes: CatItem[];
+  provincias: Provincia[];
+  cantones: Canton[];
+  parroquias: Parroquia[];
 }
 
 // Item del carrito (localStorage)

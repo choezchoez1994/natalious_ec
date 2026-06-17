@@ -11,6 +11,7 @@ import { Movements } from "./Movements";
 import { Reports } from "./Reports";
 import { CarouselAdmin } from "./CarouselAdmin";
 import { CatalogsAdmin } from "./CatalogsAdmin";
+import { ShippingZones } from "./ShippingZones";
 import { Settings } from "./Settings";
 import { ChatIA } from "./ChatIA";
 
@@ -23,6 +24,7 @@ const TABS = [
   { id: "chat-ia", label: "Chat IA" },
   { id: "carousel", label: "Carrusel" },
   { id: "catalogs", label: "Catálogos" },
+  { id: "zones", label: "Zonas de envío" },
   { id: "settings", label: "Ajustes" },
 ] as const;
 
@@ -132,6 +134,7 @@ export function AdminApp() {
         {tab === "chat-ia" && <ChatIA />}
         {tab === "carousel" && <CarouselAdmin />}
         {tab === "catalogs" && <CatalogsAdmin />}
+        {tab === "zones" && <ShippingZones />}
         {tab === "settings" && <Settings />}
       </main>
     </div>

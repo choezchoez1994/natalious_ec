@@ -128,7 +128,7 @@ export function ProductDetail() {
             {p.featured && <div style={{ position: "absolute", top: 16, right: 12, zIndex: 3 }}><FeatStar /></div>}
             <div style={{ position: "absolute", top: 16, left: 12, zIndex: 3 }}><StockTag p={p} /></div>
             <button className="nat-mainimg-stage" onClick={() => activeImg && setLb(activeImg)} title="Ampliar imagen">
-              <ImageSlot url={activeImg} fit="contain" fill placeholder={p.name} />
+              <ImageSlot url={activeImg} fit="cover" fill placeholder={p.name} />
               <span className="nat-zoomhint">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-3.4-3.4M11 8.4v5.2M8.4 11h5.2" /></svg>
                 Ampliar

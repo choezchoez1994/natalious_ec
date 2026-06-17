@@ -37,6 +37,15 @@ const DEFAULT_CONFIG: AppConfig = {
     handleIg: "@natalious.ec",
     handleTk: "@natalious.ec",
   },
+  tienda: {
+    provinciaCod: "",
+    provinciaNombre: "",
+    cantonCod: "",
+    cantonNombre: "",
+    parroquiaCod: "",
+    parroquiaNombre: "",
+    direccion: "",
+  },
 };
 
 /** Carga todo lo que necesita la tienda y el panel en paralelo. */
@@ -57,10 +66,11 @@ export async function fetchCatalog(): Promise<CatalogData> {
     payStatusesRes,
     moveReasonsRes,
     channelsRes,
-    citiesRes,
     banksRes,
-    provincesRes,
     catSizesRes,
+    provinciasRes,
+    cantonesRes,
+    parroquiasRes,
   ] = await Promise.all([
     supabase.from("products").select("*"),
     supabase.from("product_sizes").select("*"),
@@ -77,10 +87,11 @@ export async function fetchCatalog(): Promise<CatalogData> {
     supabase.from("cat_payment_statuses").select("*").order("sort"),
     supabase.from("cat_movement_reasons").select("*").order("sort"),
     supabase.from("cat_channels").select("*").order("sort"),
-    supabase.from("cat_cities").select("*").order("sort"),
     supabase.from("cat_banks").select("*").order("sort"),
-    supabase.from("provinces").select("*").order("sort"),
     supabase.from("cat_sizes").select("*").order("sort"),
+    supabase.from("dpa_provincias").select("*").order("nombre"),
+    supabase.from("dpa_cantones").select("*").order("nombre"),
+    supabase.from("dpa_parroquias").select("*").order("nombre"),
   ]);
 
   const firstErr = [productsRes, sizesRes, colorsRes, imagesRes, categoriesRes].find(
@@ -123,6 +134,7 @@ export async function fetchCatalog(): Promise<CatalogData> {
         carousel: { ...DEFAULT_CONFIG.carousel, ...(cfgRow.carousel ?? {}) },
         wa: { ...DEFAULT_CONFIG.wa, ...(cfgRow.wa ?? {}) },
         social: { ...DEFAULT_CONFIG.social, ...(cfgRow.social ?? {}) },
+        tienda: { ...DEFAULT_CONFIG.tienda, ...(cfgRow.tienda ?? {}) },
       }
     : DEFAULT_CONFIG;
 
@@ -133,10 +145,11 @@ export async function fetchCatalog(): Promise<CatalogData> {
     paymentStatuses: payStatusesRes.data ?? [],
     movementReasons: moveReasonsRes.data ?? [],
     channels: channelsRes.data ?? [],
-    cities: citiesRes.data ?? [],
     banks: banksRes.data ?? [],
-    provinces: provincesRes.data ?? [],
     sizes: catSizesRes.data ?? [],
+    provincias: provinciasRes.data ?? [],
+    cantones: cantonesRes.data ?? [],
+    parroquias: parroquiasRes.data ?? [],
   };
 
   return {

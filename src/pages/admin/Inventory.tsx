@@ -87,12 +87,18 @@ export function Inventory() {
     { id: "featured", label: "Destacados", n: all.filter((p) => p.featured).length },
     { id: "inactive", label: "Inactivos", n: all.filter((p) => !p.active).length },
   ];
+  const reviewTabs = [
+    { id: "noimg", label: "Sin imagen", n: all.filter((p) => p.images.length === 0).length },
+    { id: "noprice", label: "Precio 0", n: all.filter((p) => p.retail === 0).length },
+  ];
   let list = all;
   if (tab === "active") list = all.filter((p) => p.active);
   else if (tab === "low") list = all.filter((p) => p.lowStock);
   else if (tab === "out") list = all.filter((p) => p.avail === "agotado");
   else if (tab === "featured") list = all.filter((p) => p.featured);
   else if (tab === "inactive") list = all.filter((p) => !p.active);
+  else if (tab === "noimg") list = all.filter((p) => p.images.length === 0);
+  else if (tab === "noprice") list = all.filter((p) => p.retail === 0);
   if (q.trim()) list = list.filter((p) => p.name.toLowerCase().includes(q.trim().toLowerCase()));
 
   return (
@@ -110,12 +116,17 @@ export function Inventory() {
             {t.label} <span style={{ opacity: 0.6 }}>· {t.n}</span>
           </button>
         ))}
+        {reviewTabs.map((t, i) => (
+          <button key={t.id} onClick={() => setTab(t.id)} className={"nat-chip" + (tab === t.id ? " is-active" : "")} style={{ flex: "none", marginLeft: i === 0 ? "auto" : undefined }}>
+            {t.label} <span style={{ opacity: 0.6 }}>· {t.n}</span>
+          </button>
+        ))}
       </div>
 
       {list.length === 0 ? (
         <EmptyState
           title="Sin resultados"
-          body={tab === "out" ? "No tienes productos agotados. ✦" : tab === "low" ? "Ningún producto con stock bajo. ✦" : "Crea un producto nuevo o ajusta la búsqueda."}
+          body={tab === "out" ? "No tienes productos agotados. ✦" : tab === "low" ? "Ningún producto con stock bajo. ✦" : tab === "noimg" ? "Todos los productos tienen imagen cargada. ✦" : tab === "noprice" ? "Ningún producto con precio en $0,00. ✦" : "Crea un producto nuevo o ajusta la búsqueda."}
           action="Ver todos"
           onAction={() => { setTab("todos"); setQ(""); }}
         />

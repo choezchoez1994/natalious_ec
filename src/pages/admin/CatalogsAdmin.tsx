@@ -3,18 +3,16 @@ import { ACard, ASectionTitle, AInput, AToggle, LocalInput } from "../../compone
 import { Spinner } from "../../components/ui";
 import { useCatalog } from "../../store/CatalogContext";
 import {
-  addCity,
   addNamedCat,
   addSizeCat,
   addTextCat,
   deleteNamedCat,
   deleteSizeCat,
   deleteTextCat,
-  setCityProvince,
   updateNamedCat,
   updateTextCat,
 } from "../../services/catalogs";
-import type { CatItem, CityItem, MovementReasonCat, NamedItem, OrderStateCat } from "../../lib/types";
+import type { CatItem, MovementReasonCat, NamedItem, OrderStateCat } from "../../lib/types";
 import type { NamedCatTable, TextCatTable } from "../../services/catalogs";
 
 function slug(s: string): string {
@@ -149,47 +147,6 @@ function SizesSection({ items, reload }: { items: CatItem[]; reload: () => Promi
   );
 }
 
-function CitiesSection({ items, provinces, reload }: { items: CityItem[]; provinces: NamedItem[]; reload: () => Promise<void> }) {
-  const [prov, setProv] = useState("");
-  return (
-    <ACard>
-      <h3 className="nat-editor-h" style={{ marginBottom: 4 }}>Ciudades</h3>
-      <p className="nat-editor-sub">Se usan en el checkout y en la venta manual. Puedes asociarlas a una provincia.</p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {items.map((it) => (
-          <div key={it.id} className="nat-opt-row">
-            <LocalInput value={it.name} onCommit={async (v) => { await updateNamedCat("cat_cities", it.id, v); await reload(); }} />
-            <select className="nat-input" style={{ maxWidth: 160 }} value={it.province_id ?? ""} onChange={async (e) => { await setCityProvince(it.id, e.target.value || null); await reload(); }}>
-              <option value="">Sin provincia</option>
-              {provinces.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-            <button className="nat-tagx" style={{ width: 28, height: 28 }} title="Eliminar" onClick={async () => { if (confirm("¿Eliminar “" + it.name + "”?")) { await deleteNamedCat("cat_cities", it.id); await reload(); } }}>✕</button>
-          </div>
-        ))}
-        {items.length === 0 && <p className="nat-editor-sub" style={{ margin: 0 }}>Sin ciudades.</p>}
-      </div>
-      <div style={{ display: "flex", gap: 7, marginTop: 10, alignItems: "center" }}>
-        <select className="nat-input" style={{ maxWidth: 150 }} value={prov} onChange={(e) => setProv(e.target.value)}>
-          <option value="">Sin provincia</option>
-          {provinces.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
-        <AddRowInline placeholder="Nueva ciudad" onAdd={async (v) => { await addCity(v, prov || null); await reload(); }} />
-      </div>
-    </ACard>
-  );
-}
-
-function AddRowInline({ placeholder, onAdd }: { placeholder: string; onAdd: (v: string) => Promise<void> }) {
-  const [v, setV] = useState("");
-  const add = async () => { if (!v.trim()) return; await onAdd(v.trim()); setV(""); };
-  return (
-    <>
-      <AInput value={v} placeholder={placeholder} onChange={(e) => setV(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void add(); }} />
-      <button className="nat-btn-ghost" style={{ padding: "10px 16px", flex: "none" }} onClick={add}>Añadir</button>
-    </>
-  );
-}
-
 export function CatalogsAdmin() {
   const { catalogs, loading, reload } = useCatalog();
   if (loading) return <Spinner />;
@@ -198,7 +155,7 @@ export function CatalogsAdmin() {
     <div>
       <ASectionTitle kicker="Configuración" title="Catálogos configurables" />
       <p style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontSize: 13, color: "var(--ink)", opacity: 0.6, margin: "-6px 0 16px" }}>
-        Estados, ciudades, bancos, métodos de pago, estados de pago, motivos de movimiento y canales de contacto.
+        Estados, bancos, métodos de pago, estados de pago, motivos de movimiento y canales de contacto.
       </p>
       <div className="nat-admin-2col" style={{ alignItems: "start" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -206,8 +163,6 @@ export function CatalogsAdmin() {
           <OrderStatesSection items={catalogs.orderStates} reload={reload} />
           <MovementReasonsSection items={catalogs.movementReasons} reload={reload} />
           <SizesSection items={catalogs.sizes} reload={reload} />
-          <NamedCatSection title="Provincias" hint="Provincias / estados para la geografía." table="provinces" items={catalogs.provinces} reload={reload} />
-          <CitiesSection items={catalogs.cities} provinces={catalogs.provinces} reload={reload} />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <TextCatSection title="Métodos de pago" hint="transferencia, efectivo, contra entrega, otro." table="cat_payment_methods" items={catalogs.paymentMethods} reload={reload} />

@@ -9,8 +9,8 @@ export type TextCatTable =
   | "cat_movement_reasons"
   | "cat_channels";
 
-// Catálogos con id uuid + columna name (ciudades, bancos, provincias)
-export type NamedCatTable = "cat_cities" | "cat_banks" | "provinces";
+// Catálogos con id uuid + columna name (bancos)
+export type NamedCatTable = "cat_banks";
 
 export async function addTextCat(
   table: TextCatTable,
@@ -61,16 +61,6 @@ export async function addSizeCat(id: string, label: string): Promise<void> {
 }
 export async function deleteSizeCat(id: string): Promise<void> {
   await supabase.from("cat_sizes").delete().eq("id", id);
-}
-
-// ---------- ciudad con provincia ----------
-export async function addCity(name: string, provinceId: string | null): Promise<void> {
-  const { data } = await supabase.from("cat_cities").select("sort");
-  const nextSort = (data ?? []).reduce((m: number, r: any) => Math.max(m, r.sort), -1) + 1;
-  await supabase.from("cat_cities").insert({ name, province_id: provinceId, sort: nextSort });
-}
-export async function setCityProvince(id: string, provinceId: string | null): Promise<void> {
-  await supabase.from("cat_cities").update({ province_id: provinceId }).eq("id", id);
 }
 
 // ---------- categorías ----------

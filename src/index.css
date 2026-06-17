@@ -181,6 +181,8 @@ button { font-family: inherit; }
 /* inputs */
 .nat-input { width: 100%; background: var(--paper); border: 1px solid var(--line); border-radius: 9px; padding: 11px 13px; font-family: 'Hanken Grotesk', sans-serif; font-size: 14.5px; color: var(--ink); outline: none; transition: border-color .15s, box-shadow .15s; }
 .nat-input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(54, 80, 90, 0.14); }
+.nat-input.is-error { border-color: #9a3b32; }
+.nat-input.is-error:focus { border-color: #9a3b32; box-shadow: 0 0 0 3px rgba(154, 59, 50, 0.14); }
 textarea.nat-input { resize: vertical; line-height: 1.5; }
 select.nat-input { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2316150f' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 34px; }
 
@@ -349,8 +351,8 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
 /* detalle: imagen principal grande + lightbox */
 .nat-detail-mainimg { position: relative; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
 .nat-mainimg-bar { height: 8px; background: var(--teal); }
-.nat-mainimg-stage { position: relative; display: block; width: 100%; height: 430px; border: none; padding: 0; margin: 0; background: repeating-linear-gradient(135deg, rgba(22, 21, 15, 0.025) 0 10px, transparent 10px 20px), var(--surface); cursor: zoom-in; }
-@media (min-width: 880px) { .nat-mainimg-stage { height: 540px; } }
+.nat-mainimg-stage { position: relative; display: block; width: 100%; aspect-ratio: 3 / 4; border: none; padding: 0; margin: 0; background: #fff; cursor: zoom-in; }
+.nat-mainimg-stage .nat-imageslot > img { object-position: center top; }
 .nat-zoomhint { position: absolute; right: 12px; bottom: 12px; z-index: 3; display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px; background: rgba(22, 21, 15, 0.62); color: #fff; font-family: 'Hanken Grotesk', sans-serif; font-size: 12px; font-weight: 600; pointer-events: none; opacity: 0; transition: opacity .15s ease; }
 .nat-mainimg-stage:hover .nat-zoomhint { opacity: 1; }
 @media (hover: none) { .nat-zoomhint { opacity: 1; } }

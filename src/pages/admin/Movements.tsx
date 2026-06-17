@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { ACard, ASectionTitle, AField, AInput, ASelect, AStepper, PriceField } from "../../components/form";
+import { ZonaSelect, ZONA_VACIA } from "../../components/ZonaSelect";
+import type { Zona } from "../../components/ZonaSelect";
 import { Spinner } from "../../components/ui";
 import { useCatalog } from "../../store/CatalogContext";
 import { fetchMovements, manualSale, registerMovement } from "../../services/inventory";
+import { buscarCliente } from "../../services/clientes";
+import { validarIdentificacion } from "../../lib/cedula";
 import { availableStock } from "../../lib/effective";
 import { money, today } from "../../lib/format";
 import type { Movement } from "../../lib/types";
@@ -148,7 +152,8 @@ function ManualSaleForm({ onDone }: { onDone: () => Promise<void> }) {
   const [qty, setQty] = useState(1);
   const [precio, setPrecio] = useState<number | null>(p ? p.retail : null);
   const [canal, setCanal] = useState("");
-  const [f, setF] = useState({ cedula: "", nombres: "", apellidos: "", correo: "", celular: "", ciudad: "", direccion: "", formaPago: "", estadoPago: "Pagado", banco: "", comprobante: "" });
+  const [f, setF] = useState({ cedula: "", nombres: "", apellidos: "", correo: "", celular: "", direccion: "", formaPago: "", estadoPago: "Pagado", banco: "", comprobante: "" });
+  const [zona, setZona] = useState<Zona>(ZONA_VACIA);
   const [note, setNote] = useState("");
   const [force, setForce] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
@@ -165,10 +170,25 @@ function ManualSaleForm({ onDone }: { onDone: () => Promise<void> }) {
   const cur = p ? availableStock(p, size) : 0;
   const isTransfer = f.formaPago === "Transferencia bancaria";
 
+  const onBlurCedula = async () => {
+    if (!f.cedula.trim()) return;
+    const cli = await buscarCliente(f.cedula.trim());
+    if (!cli) return;
+    setF((x) => ({ ...x, nombres: cli.nombres, apellidos: cli.apellidos, correo: cli.correo, celular: cli.celular, direccion: cli.direccion }));
+    if (cli.provincia_cod && cli.canton_cod && cli.parroquia_cod) {
+      setZona({
+        provinciaCod: cli.provincia_cod, provinciaNombre: cli.provincia_nombre,
+        cantonCod: cli.canton_cod, cantonNombre: cli.canton_nombre,
+        parroquiaCod: cli.parroquia_cod, parroquiaNombre: cli.parroquia_nombre,
+      });
+    }
+  };
+
   const submit = async () => {
+    if (f.cedula.trim()) { const m = validarIdentificacion(f.cedula); if (m) return setMsg({ ok: false, t: m }); }
     if (!f.nombres.trim() || !f.apellidos.trim()) return setMsg({ ok: false, t: "Ingresa nombres y apellidos del cliente." });
     if (!f.celular.trim()) return setMsg({ ok: false, t: "Ingresa el celular del cliente." });
-    if (!f.ciudad.trim()) return setMsg({ ok: false, t: "Selecciona la ciudad." });
+    if (!zona.provinciaCod || !zona.cantonCod || !zona.parroquiaCod) return setMsg({ ok: false, t: "Selecciona provincia, cantón y parroquia." });
     if (!canal) return setMsg({ ok: false, t: "Selecciona el canal de origen." });
     if (!f.formaPago) return setMsg({ ok: false, t: "Selecciona la forma de pago." });
     if (isTransfer && (!f.banco.trim() || !f.comprobante.trim())) return setMsg({ ok: false, t: "Banco y comprobante son obligatorios en transferencia." });
@@ -177,7 +197,7 @@ function ManualSaleForm({ onDone }: { onDone: () => Promise<void> }) {
     setBusy(true);
     const res = await manualSale({
       productId: pid, size, color, qty, precioVenta: precio,
-      cliente: { cedula: f.cedula, nombres: f.nombres, apellidos: f.apellidos, correo: f.correo, celular: f.celular, ciudad: f.ciudad, direccion: f.direccion },
+      cliente: { cedula: f.cedula, nombres: f.nombres, apellidos: f.apellidos, correo: f.correo, celular: f.celular, direccion: f.direccion, provinciaCod: zona.provinciaCod, provinciaNombre: zona.provinciaNombre, cantonCod: zona.cantonCod, cantonNombre: zona.cantonNombre, parroquiaCod: zona.parroquiaCod, parroquiaNombre: zona.parroquiaNombre, ciudad: zona.cantonNombre },
       pago: { formaPago: f.formaPago, estadoPago: f.estadoPago, bancoOrigen: f.banco, numeroComprobante: f.comprobante, valorPagado: f.estadoPago === "Pagado" ? precio * qty : 0, fechaPago: f.estadoPago === "Pagado" ? today() : "", observacionPago: "" },
       canal, note, force,
     });
@@ -203,22 +223,15 @@ function ManualSaleForm({ onDone }: { onDone: () => Promise<void> }) {
 
       <h3 className="nat-editor-h" style={{ marginTop: 4 }}>Datos del cliente</h3>
       <div className="nat-admin-2col" style={{ gap: 12 }}>
-        <AField label="Cédula / identificación"><AInput value={f.cedula} onChange={(e) => set("cedula", e.target.value)} /></AField>
+        <AField label="Cédula / identificación" hint="Si ya está registrado, cargamos sus datos."><AInput value={f.cedula} onChange={(e) => set("cedula", e.target.value)} onBlur={onBlurCedula} /></AField>
         <AField label="Celular"><AInput value={f.celular} inputMode="tel" onChange={(e) => set("celular", e.target.value)} /></AField>
       </div>
       <div className="nat-admin-2col" style={{ gap: 12 }}>
         <AField label="Nombres"><AInput value={f.nombres} onChange={(e) => set("nombres", e.target.value)} /></AField>
         <AField label="Apellidos"><AInput value={f.apellidos} onChange={(e) => set("apellidos", e.target.value)} /></AField>
       </div>
-      <div className="nat-admin-2col" style={{ gap: 12 }}>
-        <AField label="Correo (opcional)"><AInput value={f.correo} inputMode="email" onChange={(e) => set("correo", e.target.value)} /></AField>
-        <AField label="Ciudad">
-          <ASelect value={f.ciudad} onChange={(e) => set("ciudad", (e.target as HTMLSelectElement).value)}>
-            <option value="">— Elige —</option>
-            {catalogs.cities.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
-          </ASelect>
-        </AField>
-      </div>
+      <AField label="Correo (opcional)"><AInput value={f.correo} inputMode="email" onChange={(e) => set("correo", e.target.value)} /></AField>
+      <ZonaSelect value={zona} onChange={setZona} />
       <AField label="Dirección de entrega"><AInput value={f.direccion} onChange={(e) => set("direccion", e.target.value)} /></AField>
       <AField label="Canal de origen">
         <ASelect value={canal} onChange={(e) => setCanal((e.target as HTMLSelectElement).value)}>

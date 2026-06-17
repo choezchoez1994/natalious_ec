@@ -31,12 +31,16 @@ export function ASectionTitle({ kicker, title, right }: { kicker?: string; title
   );
 }
 
-export function AField({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+export function AField({ label, hint, error, children }: { label: string; hint?: string; error?: string; children: ReactNode }) {
   return (
     <label style={{ display: "block", marginBottom: 16 }}>
       <div style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontWeight: 700, fontSize: 13, color: "var(--ink)", marginBottom: 6 }}>{label}</div>
       {children}
-      {hint && <div style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontSize: 12, color: "var(--ink)", opacity: 0.55, marginTop: 5 }}>{hint}</div>}
+      {error ? (
+        <div style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontSize: 12, fontWeight: 600, color: "#9a3b32", marginTop: 5 }}>{error}</div>
+      ) : hint ? (
+        <div style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontSize: 12, color: "var(--ink)", opacity: 0.55, marginTop: 5 }}>{hint}</div>
+      ) : null}
     </label>
   );
 }

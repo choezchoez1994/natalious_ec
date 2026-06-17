@@ -1,13 +1,55 @@
 import { useEffect, useRef, useState } from "react";
 import { ACard, ASectionTitle, AField, AInput, ATextarea, AToggle, LocalInput } from "../../components/form";
+import { ZonaSelect } from "../../components/ZonaSelect";
+import type { Zona } from "../../components/ZonaSelect";
 import { Icon } from "../../components/icons";
 import { Spinner } from "../../components/ui";
 import { useCatalog } from "../../store/CatalogContext";
-import { setSocial, setWA } from "../../services/settings";
+import { setSocial, setTienda, setWA } from "../../services/settings";
 import { createCategory, deleteCategory, updateCategory } from "../../services/catalogs";
 import { waLinkGeneral } from "../../lib/wa";
 import { fmtPhone, fillTemplate, money } from "../../lib/format";
 import type { WaConfig } from "../../lib/types";
+
+function StoreSettings() {
+  const { config, reload } = useCatalog();
+  const t = config.tienda;
+  const [zona, setZona] = useState<Zona>({
+    provinciaCod: t.provinciaCod, provinciaNombre: t.provinciaNombre,
+    cantonCod: t.cantonCod, cantonNombre: t.cantonNombre,
+    parroquiaCod: t.parroquiaCod, parroquiaNombre: t.parroquiaNombre,
+  });
+  useEffect(() => {
+    setZona({
+      provinciaCod: t.provinciaCod, provinciaNombre: t.provinciaNombre,
+      cantonCod: t.cantonCod, cantonNombre: t.cantonNombre,
+      parroquiaCod: t.parroquiaCod, parroquiaNombre: t.parroquiaNombre,
+    });
+  }, [t.provinciaCod, t.cantonCod, t.parroquiaCod]);
+
+  const onZona = async (z: Zona) => {
+    setZona(z);
+    await setTienda({
+      provinciaCod: z.provinciaCod, provinciaNombre: z.provinciaNombre,
+      cantonCod: z.cantonCod, cantonNombre: z.cantonNombre,
+      parroquiaCod: z.parroquiaCod, parroquiaNombre: z.parroquiaNombre,
+    });
+    await reload();
+  };
+
+  return (
+    <ACard>
+      <p className="nat-editor-sub">
+        Ubicación y dirección de la tienda. Cuando un cliente elige la misma parroquia, podrá optar
+        por <strong>retirar en tienda</strong> (sin costo de envío) y verá esta dirección.
+      </p>
+      <ZonaSelect value={zona} onChange={onZona} />
+      <AField label="Dirección de la tienda" hint="Se muestra al cliente que elige retiro en tienda.">
+        <LocalInput value={t.direccion} onCommit={async (v) => { await setTienda({ direccion: v }); await reload(); }} placeholder="Calle, número, referencia…" />
+      </AField>
+    </ACard>
+  );
+}
 
 function VarChip({ token, onInsert }: { token: string; onInsert: (t: string) => void }) {
   return (
@@ -167,6 +209,10 @@ export function Settings() {
   return (
     <div>
       <ASectionTitle kicker="Tienda" title="Ajustes" />
+      <ASectionTitle kicker="Ubicación" title="Datos de la tienda" />
+      <StoreSettings />
+
+      <ASectionTitle kicker="Contacto" title="WhatsApp" />
       <WhatsAppSettings />
 
       <ASectionTitle kicker="Marca" title="Redes sociales" />

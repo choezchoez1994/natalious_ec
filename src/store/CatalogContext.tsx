@@ -39,6 +39,7 @@ const EMPTY: CatalogData = {
       replyNote: "",
     },
     social: { hashtags: "", handleIg: "", handleTk: "" },
+    tienda: { provinciaCod: "", provinciaNombre: "", cantonCod: "", cantonNombre: "", parroquiaCod: "", parroquiaNombre: "", direccion: "" },
   },
   catalogs: {
     productStates: [],
@@ -47,10 +48,11 @@ const EMPTY: CatalogData = {
     paymentStatuses: [],
     movementReasons: [],
     channels: [],
-    cities: [],
     banks: [],
-    provinces: [],
     sizes: [],
+    provincias: [],
+    cantones: [],
+    parroquias: [],
   },
 };
 

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { ACard, ASectionTitle, AField, ATextarea, ASelect, LocalInput, PriceField } from "../../components/form";
+import { ZonaSelect } from "../../components/ZonaSelect";
+import type { Zona } from "../../components/ZonaSelect";
 import { ImageSlot } from "../../components/ImageSlot";
 import { EmptyState, Spinner } from "../../components/ui";
 import { Sparkle, ChevronLeft } from "../../components/icons";
@@ -10,6 +12,7 @@ import {
   setOrderObs,
   setOrderPago,
   setOrderCanal,
+  setOrderZone,
 } from "../../services/orders";
 import { money } from "../../lib/format";
 import type { Order, OrderStateCat } from "../../lib/types";
@@ -138,10 +141,28 @@ function OrderDetail({
   onBack: () => void;
   onChanged: () => Promise<void>;
 }) {
+  const { config } = useCatalog();
+  const tienda = config.tienda;
   const [obs, setObs] = useState(order.observacion_interna ?? "");
   const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
   const c = order.cliente ?? {};
   const pg = order.pago ?? {};
+  const [zona, setZona] = useState<Zona>({
+    provinciaCod: c.provinciaCod ?? "", provinciaNombre: c.provinciaNombre ?? "",
+    cantonCod: c.cantonCod ?? "", cantonNombre: c.cantonNombre ?? "",
+    parroquiaCod: c.parroquiaCod ?? "", parroquiaNombre: c.parroquiaNombre ?? "",
+  });
+  const [tipoEntrega, setTipoEntrega] = useState<"servientrega" | "retiro">(c.tipoEntrega ?? "servientrega");
+  const puedeRetirar = !!tienda.parroquiaCod && zona.parroquiaCod === tienda.parroquiaCod;
+  const tipoEntregaEf: "servientrega" | "retiro" = puedeRetirar ? tipoEntrega : "servientrega";
+
+  const saveZona = async () => {
+    if (!zona.provinciaCod || !zona.cantonCod || !zona.parroquiaCod) return setMsg({ ok: false, t: "Selecciona provincia, cantón y parroquia." });
+    const res = await setOrderZone(order.id, { provinciaCod: zona.provinciaCod, cantonCod: zona.cantonCod, parroquiaCod: zona.parroquiaCod, tipoEntrega: tipoEntregaEf });
+    if (!res.ok) setMsg({ ok: false, t: res.error ?? "Error" });
+    else { setMsg({ ok: true, t: "Zona y entrega actualizadas" }); await onChanged(); }
+    setTimeout(() => setMsg(null), 2600);
+  };
 
   const change = async (st: string) => {
     if (st === order.estado) return;
@@ -181,9 +202,15 @@ function OrderDetail({
               <div><span>Cédula</span><strong>{c.cedula}</strong></div>
               <div><span>Celular</span><strong>{c.celular}</strong></div>
               <div><span>Correo</span><strong>{c.correo}</strong></div>
-              <div><span>Ciudad</span><strong>{c.ciudad || "—"}</strong></div>
+              <div><span>Provincia</span><strong>{c.provinciaNombre || "—"}</strong></div>
+              <div><span>Cantón</span><strong>{c.cantonNombre || c.ciudad || "—"}</strong></div>
+              <div><span>Parroquia</span><strong>{c.parroquiaNombre || "—"}</strong></div>
+              <div><span>Entrega</span><strong>{c.tipoEntrega === "retiro" ? "Retiro en tienda" : "Envío Servientrega"}</strong></div>
               <div><span>Canal de origen</span><strong>{order.canal_origen || "—"}</strong></div>
               <div style={{ gridColumn: "1 / -1" }}><span>Dirección</span><strong>{c.direccion}</strong></div>
+              {c.tipoEntrega === "retiro" && (
+                <div style={{ gridColumn: "1 / -1" }}><span>Retiro en</span><strong>{c.direccionRetiro || tienda.direccion || "—"}</strong></div>
+              )}
             </div>
           </ACard>
 
@@ -235,9 +262,19 @@ function OrderDetail({
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--line)", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <span style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontWeight: 700, fontSize: 14, color: "var(--ink)" }}>Total</span>
-              <span style={{ fontFamily: "'Bodoni Moda',serif", fontWeight: 700, fontSize: 24, color: "var(--teal)" }}>{money(order.total)}</span>
+            <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--line)", display: "flex", flexDirection: "column", gap: 7 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'Hanken Grotesk',sans-serif", fontSize: 13, color: "var(--ink)" }}>
+                <span style={{ opacity: 0.7 }}>Subtotal</span>
+                <span style={{ fontWeight: 700 }}>{money(order.subtotal)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'Hanken Grotesk',sans-serif", fontSize: 13, color: "var(--ink)" }}>
+                <span style={{ opacity: 0.7 }}>Envío</span>
+                <span style={{ fontWeight: 700 }}>{order.valor_envio > 0 ? money(order.valor_envio) : "Gratis"}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 4 }}>
+                <span style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontWeight: 700, fontSize: 14, color: "var(--ink)" }}>Total</span>
+                <span style={{ fontFamily: "'Bodoni Moda',serif", fontWeight: 700, fontSize: 24, color: "var(--teal)" }}>{money(order.total)}</span>
+              </div>
             </div>
           </ACard>
         </div>
@@ -257,6 +294,25 @@ function OrderDetail({
             <AField label="Observación interna" hint="Se guarda al cambiar de estado o al salir del campo.">
               <ATextarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} onBlur={() => setOrderObs(order.id, obs)} />
             </AField>
+          </ACard>
+
+          <ACard>
+            <h3 className="nat-editor-h">Zona y entrega</h3>
+            <p className="nat-editor-sub">Corrige la ubicación o el tipo de entrega; el envío y el total se recalculan.</p>
+            <ZonaSelect value={zona} onChange={setZona} />
+            {puedeRetirar && (
+              <AField label="Tipo de entrega" hint="Misma parroquia que la tienda: puede retirar sin costo.">
+                <div style={{ display: "flex", gap: 8 }}>
+                  {([["servientrega", "Servientrega"], ["retiro", "Retiro en tienda"]] as const).map(([id, lb]) => (
+                    <button key={id} type="button" onClick={() => setTipoEntrega(id)} className="nat-statebtn"
+                      style={{ flex: 1, borderColor: "var(--teal)", color: tipoEntregaEf === id ? "#fff" : "var(--teal)", background: tipoEntregaEf === id ? "var(--teal)" : "transparent" }}>
+                      {lb}
+                    </button>
+                  ))}
+                </div>
+              </AField>
+            )}
+            <button className="nat-btn-primary" style={{ width: "100%" }} onClick={saveZona}>Guardar zona y recalcular</button>
           </ACard>
 
           <ACard>

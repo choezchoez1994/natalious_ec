@@ -149,14 +149,21 @@ function GalleryEditor({ p, reload }: { p: EffectiveProduct; reload: () => Promi
   const [busy, setBusy] = useState(false);
 
   const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
     setBusy(true);
+    const fallidas: string[] = [];
     try {
-      await addProductImage(p.id, file);
+      // En secuencia: addProductImage recalcula sort/is_principal según las ya existentes.
+      for (const file of files) {
+        try {
+          await addProductImage(p.id, file);
+        } catch (err) {
+          fallidas.push(file.name + (err instanceof Error ? ` (${err.message})` : ""));
+        }
+      }
       await reload();
-    } catch (err) {
-      alert("No se pudo subir la imagen: " + (err instanceof Error ? err.message : ""));
+      if (fallidas.length > 0) alert("No se pudieron subir:\n" + fallidas.join("\n"));
     } finally {
       setBusy(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -176,9 +183,9 @@ function GalleryEditor({ p, reload }: { p: EffectiveProduct; reload: () => Promi
       ))}
       <button className="nat-gallery-add" onClick={() => fileRef.current?.click()} disabled={busy}>
         <span style={{ fontSize: 26, lineHeight: 1 }}>{busy ? "…" : "+"}</span>
-        <span style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontSize: 12, fontWeight: 600 }}>{busy ? "Subiendo" : "Subir imagen"}</span>
+        <span style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontSize: 12, fontWeight: 600 }}>{busy ? "Subiendo" : "Subir imágenes"}</span>
       </button>
-      <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onPick} />
+      <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={onPick} />
     </div>
   );
 }
@@ -331,6 +338,7 @@ export function ProductEditor({ id, onClose }: { id: string; onClose: () => void
           <ACard>
             <h3 className="nat-editor-h">Imágenes</h3>
             <p className="nat-editor-sub">Galería del producto (Supabase Storage). Marca una como principal.</p>
+            <p className="nat-editor-sub" style={{ marginTop: -4 }}>Recomendado: vertical <strong>3:4</strong> (1200 × 1600 px), fondo blanco y producto centrado. JPG/WebP &lt; 500 KB. Puedes seleccionar varias a la vez.</p>
             <GalleryEditor p={p} reload={reload} />
           </ACard>
 

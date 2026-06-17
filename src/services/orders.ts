@@ -71,6 +71,22 @@ export async function setOrderPago(orderId: string, pago: Partial<Pago>): Promis
   await supabase.from("orders").update({ pago: merged }).eq("id", orderId);
 }
 
+/** Corrige la zona de una orden (RPC admin). Recalcula envío y total. */
+export async function setOrderZone(
+  orderId: string,
+  zona: { provinciaCod: string; cantonCod: string; parroquiaCod: string; tipoEntrega: string }
+): Promise<RpcResult> {
+  const { data, error } = await supabase.rpc("nat_update_order_zone", {
+    p_order_id: orderId,
+    p_provincia_cod: zona.provinciaCod,
+    p_canton_cod: zona.cantonCod,
+    p_parroquia_cod: zona.parroquiaCod,
+    p_tipo_entrega: zona.tipoEntrega,
+  });
+  if (error) return { ok: false, error: error.message };
+  return data as RpcResult;
+}
+
 export async function setOrderCanal(orderId: string, canal: string): Promise<void> {
   await supabase.from("orders").update({ canal_origen: canal }).eq("id", orderId);
 }
