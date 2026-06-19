@@ -56,31 +56,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
     color: string,
     qty: number
   ): AddResult {
-    if (!p.noColors && p.effColors.length) {
-      if (!color) return { ok: false, error: "Selecciona un color." };
-      const c = p.effColors.find((x) => x.name === color);
-      if (!c || c.blocked) return { ok: false, error: "Ese color no está disponible." };
-    }
-    if (!p.noSizes && p.effSizes.length) {
+    // validación talla → color: primero la talla, luego el color dentro de esa talla
+    const hasSizes = !p.noSizes && p.effSizes.length > 0;
+    const selSize = hasSizes ? p.effSizes.find((x) => x.name === talla) : undefined;
+    if (hasSizes) {
       if (!talla) return { ok: false, error: "Selecciona una talla." };
-      const s = p.effSizes.find((x) => x.name === talla);
-      if (!s || s.blocked) return { ok: false, error: "Esa talla no está disponible." };
+      if (!selSize) return { ok: false, error: "Esa talla no está disponible." };
+    }
+    const sizeColors = selSize ? selSize.colors : [];
+    if (sizeColors.length) {
+      if (!color) return { ok: false, error: "Selecciona un color." };
+      const c = sizeColors.find((x) => x.name === color);
+      if (!c || c.blocked) return { ok: false, error: "Ese color no está disponible." };
     }
     if (p.stock <= 0 && !p.backorderActive) return { ok: false, error: "Producto agotado." };
 
     const n = Math.max(1, Math.round(qty || 1));
     const key = p.id + "|" + (talla || "") + "|" + (color || "");
-    const sizeStock = p.backorderActive ? 99999 : availableStock(p, talla);
-    const inCartSameSize = items
-      .filter((i) => i.productId === p.id && i.talla === (talla || ""))
+    const sizeStock = p.backorderActive ? 99999 : availableStock(p, color || "", talla || "");
+    const inCartSame = items
+      .filter((i) => i.productId === p.id && i.talla === (talla || "") && i.color === (color || ""))
       .reduce((a, i) => a + i.cantidad, 0);
-    if (!p.backorderActive && inCartSameSize + n > sizeStock) {
+    if (!p.backorderActive && inCartSame + n > sizeStock) {
       return {
         ok: false,
         error:
           sizeStock <= 0
-            ? "Sin stock para esa talla."
-            : "Solo quedan " + sizeStock + " unidades de esa talla.",
+            ? "Sin stock para esa variante."
+            : "Solo quedan " + sizeStock + " unidades de esa variante.",
       };
     }
 
@@ -121,7 +124,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (q <= 0) return prev.filter((x) => x.id !== itemId);
       const p = productById(it.productId);
       if (p && !p.backorderActive) {
-        const max = availableStock(p, it.talla);
+        const max = availableStock(p, it.color, it.talla);
         if (q > max) q = max;
       }
       q = Math.max(1, q);

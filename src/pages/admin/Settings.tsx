@@ -4,6 +4,7 @@ import { ZonaSelect } from "../../components/ZonaSelect";
 import type { Zona } from "../../components/ZonaSelect";
 import { Icon } from "../../components/icons";
 import { Spinner } from "../../components/ui";
+import { useConfirm } from "../../components/ConfirmDialog";
 import { useCatalog } from "../../store/CatalogContext";
 import { setSocial, setTienda, setWA } from "../../services/settings";
 import { createCategory, deleteCategory, updateCategory } from "../../services/catalogs";
@@ -154,6 +155,7 @@ function Bubble({ text, time }: { text: string; time: string }) {
 
 function CategoryManager() {
   const { categories, products, reload } = useCatalog();
+  const confirm = useConfirm();
   const ordered = [...categories].sort((a, b) => a.sort - b.sort);
   const [newName, setNewName] = useState("");
   const count = (id: string) => products.filter((p) => p.category_id === id).length;
@@ -188,7 +190,7 @@ function CategoryManager() {
               <div style={{ display: "flex", gap: 4, marginLeft: "auto" }}>
                 <button className="nat-iconbtn" disabled={i === 0} title="Subir" onClick={() => move(c.id, -1)}>↑</button>
                 <button className="nat-iconbtn" disabled={i === ordered.length - 1} title="Bajar" onClick={() => move(c.id, 1)}>↓</button>
-                <button className="nat-iconbtn is-danger" title="Eliminar" onClick={async () => { if (confirm("¿Eliminar categoría “" + c.name + "”? Los productos quedarán sin categoría.")) { await deleteCategory(c.id); await reload(); } }}>✕</button>
+                <button className="nat-iconbtn is-danger" title="Eliminar" onClick={async () => { if (await confirm({ title: "Eliminar categoría", message: "¿Eliminar categoría “" + c.name + "”? Los productos quedarán sin categoría.", confirmLabel: "Eliminar", danger: true })) { await deleteCategory(c.id); await reload(); } }}>✕</button>
               </div>
             </div>
           </div>

@@ -26,14 +26,15 @@ export async function createProduct(): Promise<string> {
 
   await supabase.from("products").update({ slug: id }).eq("id", id);
   await supabase.from("product_costs").insert({ product_id: id, cost: 0 });
-  await supabase.from("product_sizes").insert([
-    { product_id: id, name: "S", stock: 0, sort: 0 },
-    { product_id: id, name: "M", stock: 0, sort: 1 },
-    { product_id: id, name: "L", stock: 0, sort: 2 },
-  ]);
+  // Color inicial + sus tallas (modelo: stock por color + talla)
   await supabase
     .from("product_colors")
     .insert({ product_id: id, name: "Negro", hex: "#1d1d1b", sort: 0 });
+  await supabase.from("product_sizes").insert([
+    { product_id: id, color: "Negro", name: "S", stock: 0, sort: 0 },
+    { product_id: id, color: "Negro", name: "M", stock: 0, sort: 1 },
+    { product_id: id, color: "Negro", name: "L", stock: 0, sort: 2 },
+  ]);
   return id;
 }
 
@@ -63,22 +64,40 @@ export async function setCost(id: string, cost: number): Promise<void> {
   if (error) throw error;
 }
 
-// ---------- tallas ----------
-export async function addSize(productId: string, name: string, sort: number): Promise<void> {
-  await supabase.from("product_sizes").insert({ product_id: productId, name, stock: 0, sort });
+// ---------- tallas (variantes por color) ----------
+export async function addSize(
+  productId: string,
+  color: string,
+  name: string,
+  sort: number
+): Promise<void> {
+  await supabase
+    .from("product_sizes")
+    .insert({ product_id: productId, color, name, stock: 0, sort });
 }
-export async function removeSize(productId: string, name: string): Promise<void> {
-  await supabase.from("product_sizes").delete().eq("product_id", productId).eq("name", name);
+export async function removeSize(productId: string, color: string, name: string): Promise<void> {
+  await supabase
+    .from("product_sizes")
+    .delete()
+    .eq("product_id", productId)
+    .eq("color", color)
+    .eq("name", name);
 }
 export async function setSizeBlocked(
   productId: string,
+  color: string,
   name: string,
   blocked: boolean,
   reason?: string
 ): Promise<void> {
   const patch: Record<string, unknown> = { blocked };
   if (reason !== undefined) patch.reason = reason;
-  await supabase.from("product_sizes").update(patch).eq("product_id", productId).eq("name", name);
+  await supabase
+    .from("product_sizes")
+    .update(patch)
+    .eq("product_id", productId)
+    .eq("color", color)
+    .eq("name", name);
 }
 
 // ---------- colores ----------
@@ -91,6 +110,14 @@ export async function addColor(
   await supabase.from("product_colors").insert({ product_id: productId, name, hex, sort });
 }
 export async function removeColor(productId: string, name: string): Promise<void> {
+  // Borra las variantes de stock de ese color
+  await supabase.from("product_sizes").delete().eq("product_id", productId).eq("color", name);
+  // Conserva las imágenes: las reasigna a "general" (color='') para no perderlas
+  await supabase
+    .from("product_images")
+    .update({ color: "" })
+    .eq("product_id", productId)
+    .eq("color", name);
   await supabase.from("product_colors").delete().eq("product_id", productId).eq("name", name);
 }
 export async function updateColor(
@@ -102,7 +129,11 @@ export async function updateColor(
 }
 
 // ---------- imágenes ----------
-export async function addProductImage(productId: string, file: File): Promise<void> {
+export async function addProductImage(
+  productId: string,
+  file: File,
+  color = ""
+): Promise<void> {
   const { url, path } = await uploadImage("product-images", file, productId);
   const { data: existing } = await supabase
     .from("product_images")
@@ -111,6 +142,7 @@ export async function addProductImage(productId: string, file: File): Promise<vo
   const isFirst = (existing ?? []).length === 0;
   await supabase.from("product_images").insert({
     product_id: productId,
+    color,
     url,
     storage_path: path,
     sort: (existing ?? []).length,
@@ -124,6 +156,11 @@ export async function removeProductImage(
 ): Promise<void> {
   await removeImage("product-images", storagePath);
   await supabase.from("product_images").delete().eq("id", imageId);
+}
+
+/** Reasigna una imagen a otro color (''=general). */
+export async function setImageColor(imageId: string, color: string): Promise<void> {
+  await supabase.from("product_images").update({ color }).eq("id", imageId);
 }
 
 export async function setPrincipalImage(productId: string, imageId: string): Promise<void> {

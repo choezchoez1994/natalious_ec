@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ACard, ASectionTitle, AInput, AToggle, LocalInput } from "../../components/form";
 import { Spinner } from "../../components/ui";
+import { useConfirm } from "../../components/ConfirmDialog";
 import { useCatalog } from "../../store/CatalogContext";
 import {
   addNamedCat,
@@ -47,6 +48,7 @@ function TextCatSection({
   items: CatItem[];
   reload: () => Promise<void>;
 }) {
+  const confirm = useConfirm();
   return (
     <ACard>
       <h3 className="nat-editor-h" style={{ marginBottom: 4 }}>{title}</h3>
@@ -55,7 +57,7 @@ function TextCatSection({
         {items.map((it) => (
           <div key={it.id} className="nat-opt-row">
             <LocalInput value={it.label} onCommit={async (v) => { await updateTextCat(table, it.id, { label: v }); await reload(); }} />
-            <button className="nat-tagx" style={{ width: 28, height: 28, marginLeft: "auto" }} title="Eliminar" onClick={async () => { if (confirm("¿Eliminar “" + it.label + "”?")) { await deleteTextCat(table, it.id); await reload(); } }}>✕</button>
+            <button className="nat-tagx" style={{ width: 28, height: 28, marginLeft: "auto" }} title="Eliminar" onClick={async () => { if (await confirm({ title: "Eliminar", message: "¿Eliminar “" + it.label + "”?", confirmLabel: "Eliminar", danger: true })) { await deleteTextCat(table, it.id); await reload(); } }}>✕</button>
           </div>
         ))}
         {items.length === 0 && <p className="nat-editor-sub" style={{ margin: 0 }}>Sin elementos.</p>}
@@ -66,6 +68,7 @@ function TextCatSection({
 }
 
 function OrderStatesSection({ items, reload }: { items: OrderStateCat[]; reload: () => Promise<void> }) {
+  const confirm = useConfirm();
   return (
     <ACard>
       <h3 className="nat-editor-h" style={{ marginBottom: 4 }}>Estados de orden</h3>
@@ -75,7 +78,7 @@ function OrderStatesSection({ items, reload }: { items: OrderStateCat[]; reload:
           <div key={it.id} className="nat-opt-row">
             <input type="color" className="nat-colorinput" style={{ width: 30, height: 30 }} value={it.color} onChange={async (e) => { await updateTextCat("cat_order_states", it.id, { color: e.target.value }); await reload(); }} />
             <LocalInput value={it.label} onCommit={async (v) => { await updateTextCat("cat_order_states", it.id, { label: v }); await reload(); }} />
-            <button className="nat-tagx" style={{ width: 28, height: 28, marginLeft: "auto" }} title="Eliminar" onClick={async () => { if (confirm("¿Eliminar “" + it.label + "”?")) { await deleteTextCat("cat_order_states", it.id); await reload(); } }}>✕</button>
+            <button className="nat-tagx" style={{ width: 28, height: 28, marginLeft: "auto" }} title="Eliminar" onClick={async () => { if (await confirm({ title: "Eliminar", message: "¿Eliminar “" + it.label + "”?", confirmLabel: "Eliminar", danger: true })) { await deleteTextCat("cat_order_states", it.id); await reload(); } }}>✕</button>
           </div>
         ))}
       </div>
@@ -85,6 +88,7 @@ function OrderStatesSection({ items, reload }: { items: OrderStateCat[]; reload:
 }
 
 function MovementReasonsSection({ items, reload }: { items: MovementReasonCat[]; reload: () => Promise<void> }) {
+  const confirm = useConfirm();
   return (
     <ACard>
       <h3 className="nat-editor-h" style={{ marginBottom: 4 }}>Motivos de movimiento</h3>
@@ -94,7 +98,7 @@ function MovementReasonsSection({ items, reload }: { items: MovementReasonCat[];
           <div key={it.id} className="nat-opt-row" style={{ flexDirection: "column", alignItems: "stretch", gap: 8 }}>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <LocalInput value={it.label} onCommit={async (v) => { await updateTextCat("cat_movement_reasons", it.id, { label: v }); await reload(); }} />
-              <button className="nat-tagx" style={{ width: 28, height: 28, marginLeft: "auto" }} title="Eliminar" onClick={async () => { if (confirm("¿Eliminar “" + it.label + "”?")) { await deleteTextCat("cat_movement_reasons", it.id); await reload(); } }}>✕</button>
+              <button className="nat-tagx" style={{ width: 28, height: 28, marginLeft: "auto" }} title="Eliminar" onClick={async () => { if (await confirm({ title: "Eliminar", message: "¿Eliminar “" + it.label + "”?", confirmLabel: "Eliminar", danger: true })) { await deleteTextCat("cat_movement_reasons", it.id); await reload(); } }}>✕</button>
             </div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               <label style={{ display: "flex", alignItems: "center", gap: 6 }}><AToggle on={it.is_sale} onChange={async (v) => { await updateTextCat("cat_movement_reasons", it.id, { is_sale: v }); await reload(); }} /><span className="nat-toggle-text">Venta</span></label>
@@ -110,6 +114,7 @@ function MovementReasonsSection({ items, reload }: { items: MovementReasonCat[];
 }
 
 function NamedCatSection({ title, hint, table, items, reload }: { title: string; hint: string; table: NamedCatTable; items: NamedItem[]; reload: () => Promise<void> }) {
+  const confirm = useConfirm();
   return (
     <ACard>
       <h3 className="nat-editor-h" style={{ marginBottom: 4 }}>{title}</h3>
@@ -118,7 +123,7 @@ function NamedCatSection({ title, hint, table, items, reload }: { title: string;
         {items.map((it) => (
           <div key={it.id} className="nat-opt-row">
             <LocalInput value={it.name} onCommit={async (v) => { await updateNamedCat(table, it.id, v); await reload(); }} />
-            <button className="nat-tagx" style={{ width: 28, height: 28, marginLeft: "auto" }} title="Eliminar" onClick={async () => { if (confirm("¿Eliminar “" + it.name + "”?")) { await deleteNamedCat(table, it.id); await reload(); } }}>✕</button>
+            <button className="nat-tagx" style={{ width: 28, height: 28, marginLeft: "auto" }} title="Eliminar" onClick={async () => { if (await confirm({ title: "Eliminar", message: "¿Eliminar “" + it.name + "”?", confirmLabel: "Eliminar", danger: true })) { await deleteNamedCat(table, it.id); await reload(); } }}>✕</button>
           </div>
         ))}
         {items.length === 0 && <p className="nat-editor-sub" style={{ margin: 0 }}>Sin elementos.</p>}
@@ -129,6 +134,7 @@ function NamedCatSection({ title, hint, table, items, reload }: { title: string;
 }
 
 function SizesSection({ items, reload }: { items: CatItem[]; reload: () => Promise<void> }) {
+  const confirm = useConfirm();
   return (
     <ACard>
       <h3 className="nat-editor-h" style={{ marginBottom: 4 }}>Tallas</h3>
@@ -137,7 +143,7 @@ function SizesSection({ items, reload }: { items: CatItem[]; reload: () => Promi
         {items.map((it) => (
           <span key={it.id} className="nat-opt-row" style={{ padding: "6px 8px 6px 12px", gap: 6 }}>
             <span className="nat-opt-name">{it.label}</span>
-            <button className="nat-tagx" style={{ width: 24, height: 24 }} title="Eliminar" onClick={async () => { if (confirm("¿Eliminar talla “" + it.label + "”?")) { await deleteSizeCat(it.id); await reload(); } }}>✕</button>
+            <button className="nat-tagx" style={{ width: 24, height: 24 }} title="Eliminar" onClick={async () => { if (await confirm({ title: "Eliminar talla", message: "¿Eliminar talla “" + it.label + "”?", confirmLabel: "Eliminar", danger: true })) { await deleteSizeCat(it.id); await reload(); } }}>✕</button>
           </span>
         ))}
         {items.length === 0 && <p className="nat-editor-sub" style={{ margin: 0 }}>Sin tallas.</p>}

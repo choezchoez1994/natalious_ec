@@ -9,16 +9,24 @@ import { buscarCliente } from "../../services/clientes";
 import { validarIdentificacion } from "../../lib/cedula";
 import { availableStock } from "../../lib/effective";
 import { money, today } from "../../lib/format";
-import type { Movement } from "../../lib/types";
+import type { EffectiveProduct, EffectiveSizeColor, Movement } from "../../lib/types";
 
 type Mode = "salida" | "ingreso" | "venta";
 
-function StockBox({ size, cur }: { size: string; cur: number }) {
+/** Colores de una talla (modelo talla → color). */
+function colorsOfSize(p: EffectiveProduct | undefined, size: string): EffectiveSizeColor[] {
+  if (!p) return [];
+  return p.effSizes.find((s) => s.name === size)?.colors ?? [];
+}
+const firstName = (arr: { name: string; available?: boolean }[]) =>
+  (arr.find((c) => c.available) ?? arr[0])?.name ?? "";
+
+function StockBox({ color, size, cur }: { color: string; size: string; cur: number }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 9, padding: "10px 12px", marginBottom: 14 }}>
       <div>
-        <div style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", color: "var(--ink)", opacity: 0.55 }}>Talla</div>
-        <div style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontSize: 14, fontWeight: 700, color: "var(--ink)" }}>{size || "—"}</div>
+        <div style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", color: "var(--ink)", opacity: 0.55 }}>Variante</div>
+        <div style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontSize: 14, fontWeight: 700, color: "var(--ink)" }}>{[color, size].filter(Boolean).join(" · ") || "—"}</div>
       </div>
       <div style={{ textAlign: "right" }}>
         <div style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", color: "var(--ink)", opacity: 0.55 }}>Stock actual</div>
@@ -36,6 +44,8 @@ function ProductSizeColor({
 }) {
   const { products } = useCatalog();
   const p = products.find((x) => x.id === pid);
+  const sizes = p?.effSizes ?? [];
+  const sizeColors = colorsOfSize(p, size); // colores de la talla elegida
   return (
     <>
       <AField label="Producto">
@@ -44,18 +54,17 @@ function ProductSizeColor({
         </ASelect>
       </AField>
       <div className="nat-admin-2col" style={{ gap: 12 }}>
-        {p && p.effColors.length > 0 && (
-          <AField label="Color" hint="No afecta stock.">
-            <ASelect value={color} onChange={(e) => onColor((e.target as HTMLSelectElement).value)}>
-              <option value="">—</option>
-              {p.effColors.map((c) => <option key={c.name} value={c.name}>{c.name}{c.blocked ? " (bloqueado)" : ""}</option>)}
+        {sizes.length > 0 && (
+          <AField label="Talla" hint="El stock se controla por talla y color.">
+            <ASelect value={size} onChange={(e) => onSize((e.target as HTMLSelectElement).value)}>
+              {sizes.map((s) => <option key={s.name} value={s.name}>{s.name}{!s.available ? " (agotada)" : ""}</option>)}
             </ASelect>
           </AField>
         )}
-        {p && p.effSizes.length > 0 && (
-          <AField label="Talla" hint="El stock se afecta por talla.">
-            <ASelect value={size} onChange={(e) => onSize((e.target as HTMLSelectElement).value)}>
-              {p.effSizes.map((s) => <option key={s.name} value={s.name}>{s.name}{s.blocked ? " (bloqueada)" : ""}</option>)}
+        {sizeColors.length > 0 && (
+          <AField label="Color" hint="Colores de la talla elegida.">
+            <ASelect value={color} onChange={(e) => onColor((e.target as HTMLSelectElement).value)}>
+              {sizeColors.map((c) => <option key={c.name} value={c.name}>{c.name}{c.blocked ? " (bloqueado)" : ""}</option>)}
             </ASelect>
           </AField>
         )}
@@ -69,9 +78,8 @@ function MovementForm({ mode, onDone }: { mode: "ingreso" | "salida"; onDone: ()
   const reasons = catalogs.movementReasons.filter((r) => r.kind === mode && !(mode === "salida" && r.id === "venta"));
   const [pid, setPid] = useState(products[0]?.id ?? "");
   const p = products.find((x) => x.id === pid);
-  const firstAvail = (arr: { name: string; blocked?: boolean }[]) => (arr.find((c) => !c.blocked) ?? arr[0])?.name ?? "";
-  const [color, setColor] = useState(p ? firstAvail(p.effColors) : "");
-  const [size, setSize] = useState(p ? firstAvail(p.effSizes) : "");
+  const [size, setSize] = useState(p ? firstName(p.effSizes) : "");
+  const [color, setColor] = useState(p ? firstName(colorsOfSize(p, size)) : "");
   const [qty, setQty] = useState(1);
   const [reason, setReason] = useState(reasons[0]?.id ?? "");
   const [customReason, setCustomReason] = useState("");
@@ -87,10 +95,13 @@ function MovementForm({ mode, onDone }: { mode: "ingreso" | "salida"; onDone: ()
   const onProduct = (id: string) => {
     setPid(id);
     const np = products.find((x) => x.id === id);
-    setColor(np ? firstAvail(np.effColors) : "");
-    setSize(np ? firstAvail(np.effSizes) : "");
+    const s0 = np ? firstName(np.effSizes) : "";
+    setSize(s0);
+    setColor(firstName(colorsOfSize(np, s0)));
   };
-  const cur = p ? availableStock(p, size) : 0;
+  const onSize = (s: string) => { setSize(s); setColor(firstName(colorsOfSize(p, s))); };
+  const onColor = (c: string) => setColor(c);
+  const cur = p ? availableStock(p, color, size) : 0;
 
   const submit = async () => {
     setBusy(true);
@@ -107,8 +118,8 @@ function MovementForm({ mode, onDone }: { mode: "ingreso" | "salida"; onDone: ()
   return (
     <ACard>
       <h3 className="nat-editor-h">{mode === "ingreso" ? "Registrar ingreso" : "Registrar salida (no venta)"}</h3>
-      <ProductSizeColor pid={pid} size={size} color={color} onProduct={onProduct} onSize={setSize} onColor={setColor} />
-      <StockBox size={size} cur={cur} />
+      <ProductSizeColor pid={pid} size={size} color={color} onProduct={onProduct} onSize={onSize} onColor={onColor} />
+      <StockBox color={color} size={size} cur={cur} />
 
       <div className="nat-admin-2col" style={{ gap: 12 }}>
         <AField label="Cantidad"><AStepper value={qty} min={1} onChange={setQty} /></AField>
@@ -146,9 +157,8 @@ function ManualSaleForm({ onDone }: { onDone: () => Promise<void> }) {
   const { products, catalogs } = useCatalog();
   const [pid, setPid] = useState(products[0]?.id ?? "");
   const p = products.find((x) => x.id === pid);
-  const firstAvail = (arr: { name: string; blocked?: boolean }[]) => (arr.find((c) => !c.blocked) ?? arr[0])?.name ?? "";
-  const [color, setColor] = useState(p ? firstAvail(p.effColors) : "");
-  const [size, setSize] = useState(p ? firstAvail(p.effSizes) : "");
+  const [size, setSize] = useState(p ? firstName(p.effSizes) : "");
+  const [color, setColor] = useState(p ? firstName(colorsOfSize(p, size)) : "");
   const [qty, setQty] = useState(1);
   const [precio, setPrecio] = useState<number | null>(p ? p.retail : null);
   const [canal, setCanal] = useState("");
@@ -163,11 +173,14 @@ function ManualSaleForm({ onDone }: { onDone: () => Promise<void> }) {
   const onProduct = (id: string) => {
     setPid(id);
     const np = products.find((x) => x.id === id);
-    setColor(np ? firstAvail(np.effColors) : "");
-    setSize(np ? firstAvail(np.effSizes) : "");
+    const s0 = np ? firstName(np.effSizes) : "";
+    setSize(s0);
+    setColor(firstName(colorsOfSize(np, s0)));
     setPrecio(np ? np.retail : null);
   };
-  const cur = p ? availableStock(p, size) : 0;
+  const onSize = (s: string) => { setSize(s); setColor(firstName(colorsOfSize(p, s))); };
+  const onColor = (c: string) => setColor(c);
+  const cur = p ? availableStock(p, color, size) : 0;
   const isTransfer = f.formaPago === "Transferencia bancaria";
 
   const onBlurCedula = async () => {
@@ -213,9 +226,9 @@ function ManualSaleForm({ onDone }: { onDone: () => Promise<void> }) {
   return (
     <ACard>
       <h3 className="nat-editor-h">Venta manual desde inventario</h3>
-      <p className="nat-editor-sub">Descuenta stock por talla de inmediato, cuenta como venta y alimenta los reportes.</p>
-      <ProductSizeColor pid={pid} size={size} color={color} onProduct={onProduct} onSize={setSize} onColor={setColor} />
-      <StockBox size={size} cur={cur} />
+      <p className="nat-editor-sub">Descuenta stock por color y talla de inmediato, cuenta como venta y alimenta los reportes.</p>
+      <ProductSizeColor pid={pid} size={size} color={color} onProduct={onProduct} onSize={onSize} onColor={onColor} />
+      <StockBox color={color} size={size} cur={cur} />
       <div className="nat-admin-2col" style={{ gap: 12 }}>
         <AField label="Cantidad"><AStepper value={qty} min={1} onChange={setQty} /></AField>
         <AField label="Precio de venta real (unitario)"><PriceField value={precio} onCommit={(v) => setPrecio(v)} /></AField>

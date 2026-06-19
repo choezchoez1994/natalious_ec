@@ -165,7 +165,7 @@ export function Cart() {
           </div>
           {items.map((i) => {
             const ep = productById(i.productId);
-            const max = ep && !ep.backorderActive ? availableStock(ep, i.talla) : 99999;
+            const max = ep && !ep.backorderActive ? availableStock(ep, i.color, i.talla) : 99999;
             const atMax = i.cantidad >= max;
             return (
               <div key={i.id} className="nat-cartline">

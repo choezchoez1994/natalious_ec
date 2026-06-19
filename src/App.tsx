@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { CatalogProvider } from "./store/CatalogContext";
 import { CartProvider } from "./store/CartContext";
 import { AuthProvider } from "./store/AuthContext";
+import { ConfirmProvider } from "./components/ConfirmDialog";
 import { PublicLayout } from "./components/Layout";
 import { Home } from "./pages/Home";
 import { Catalog, Categories } from "./pages/Catalog";
@@ -34,6 +35,7 @@ export default function App() {
     <AuthProvider>
       <CatalogProvider>
         <CartProvider>
+          <ConfirmProvider>
           <div className="nat-app nat-wide">
             <Routes>
               <Route element={<PublicLayout />}>
@@ -48,6 +50,7 @@ export default function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
+          </ConfirmProvider>
         </CartProvider>
       </CatalogProvider>
     </AuthProvider>

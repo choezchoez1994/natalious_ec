@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { ACard, ASectionTitle, AField, ASelect, AToggle, LocalInput } from "../../components/form";
 import { ImageSlot } from "../../components/ImageSlot";
 import { EmptyState, Spinner } from "../../components/ui";
+import { useConfirm } from "../../components/ConfirmDialog";
 import { TrashIcon } from "../../components/icons";
 import { useCatalog } from "../../store/CatalogContext";
 import {
@@ -27,6 +28,7 @@ const LINK_TYPES = [
 
 function SlideCard({ s, index, total, reload }: { s: Slide; index: number; total: number; reload: () => Promise<void> }) {
   const { products, categories } = useCatalog();
+  const confirm = useConfirm();
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
 
@@ -69,7 +71,7 @@ function SlideCard({ s, index, total, reload }: { s: Slide; index: number; total
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <AToggle on={s.active} onChange={(v) => upd({ active: v })} labels={["Activa", "Inactiva"]} />
-              <button className="nat-iconbtn is-danger" title="Eliminar" onClick={async () => { if (confirm("¿Eliminar esta diapositiva?")) { await deleteSlide(s.id, s.image_path); await reload(); } }}>
+              <button className="nat-iconbtn is-danger" title="Eliminar" onClick={async () => { if (await confirm({ title: "Eliminar diapositiva", message: "¿Eliminar esta diapositiva del carrusel?", confirmLabel: "Eliminar", danger: true })) { await deleteSlide(s.id, s.image_path); await reload(); } }}>
                 <TrashIcon />
               </button>
             </div>

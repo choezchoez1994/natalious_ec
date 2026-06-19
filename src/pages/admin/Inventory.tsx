@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ASectionTitle, AToggle } from "../../components/form";
 import { ImageSlot } from "../../components/ImageSlot";
 import { EmptyState, Spinner } from "../../components/ui";
+import { useConfirm } from "../../components/ConfirmDialog";
 import { TrashIcon } from "../../components/icons";
 import { useCatalog } from "../../store/CatalogContext";
 import { createProduct, deleteProduct, updateProduct } from "../../services/products";
@@ -26,8 +27,9 @@ function StatePill({ state }: { state: string }) {
 }
 
 function InvItem({ p, onEdit, onChanged }: { p: EffectiveProduct; onEdit: (id: string) => void; onChanged: () => void }) {
+  const confirm = useConfirm();
   const sizesAct = p.effSizes.filter((s) => s.available).length;
-  const colorsAct = p.effColors.filter((c) => !c.blocked).length;
+  const colorsAct = p.effColors.filter((c) => !c.soldOut).length;
   return (
     <div className="nat-invitem" style={{ opacity: p.active ? 1 : 0.6 }}>
       <div className="nat-invitem-thumb">
@@ -52,7 +54,7 @@ function InvItem({ p, onEdit, onChanged }: { p: EffectiveProduct; onEdit: (id: s
         <button className="nat-iconbtn" title={p.featured ? "Quitar destacado" : "Marcar destacado"} data-on={p.featured ? "1" : "0"} onClick={async () => { await updateProduct(p.id, { featured: !p.featured }); onChanged(); }}>★</button>
         <button className="nat-mini" onClick={() => onEdit(p.id)}>Editar</button>
         <AToggle on={p.active} onChange={async (on) => { await updateProduct(p.id, { state: on ? "disponible" : "inactivo" }); onChanged(); }} />
-        <button className="nat-iconbtn is-danger" title="Eliminar" onClick={async () => { if (confirm("¿Eliminar “" + p.name + "”?")) { await deleteProduct(p.id); onChanged(); } }}>
+        <button className="nat-iconbtn is-danger" title="Eliminar" onClick={async () => { if (await confirm({ title: "Eliminar producto", message: "¿Eliminar “" + p.name + "”?", confirmLabel: "Eliminar", danger: true })) { await deleteProduct(p.id); onChanged(); } }}>
           <TrashIcon />
         </button>
       </div>

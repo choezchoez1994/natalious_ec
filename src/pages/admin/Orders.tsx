@@ -4,6 +4,7 @@ import { ZonaSelect } from "../../components/ZonaSelect";
 import type { Zona } from "../../components/ZonaSelect";
 import { ImageSlot } from "../../components/ImageSlot";
 import { EmptyState, Spinner } from "../../components/ui";
+import { useConfirm } from "../../components/ConfirmDialog";
 import { Sparkle, ChevronLeft } from "../../components/icons";
 import { useCatalog } from "../../store/CatalogContext";
 import {
@@ -142,6 +143,7 @@ function OrderDetail({
   onChanged: () => Promise<void>;
 }) {
   const { config } = useCatalog();
+  const confirm = useConfirm();
   const tienda = config.tienda;
   const [obs, setObs] = useState(order.observacion_interna ?? "");
   const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
@@ -166,7 +168,7 @@ function OrderDetail({
 
   const change = async (st: string) => {
     if (st === order.estado) return;
-    if (st === "Cancelado" && order.estado === "Enviado" && !confirm("Esta orden ya fue enviada. Cancelarla generará un reverso de inventario. ¿Continuar?")) return;
+    if (st === "Cancelado" && order.estado === "Enviado" && !(await confirm({ title: "Cancelar orden enviada", message: "Esta orden ya fue enviada. Cancelarla generará un reverso de inventario. ¿Continuar?", confirmLabel: "Sí, cancelar", cancelLabel: "No", danger: true }))) return;
     const res = await updateOrderState(order.id, st, obs);
     if (!res.ok) setMsg({ ok: false, t: res.error ?? "Error" });
     else {

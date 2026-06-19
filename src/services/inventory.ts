@@ -34,15 +34,17 @@ export async function registerMovement(mv: MovementInput): Promise<RpcResult> {
   return data as RpcResult;
 }
 
-/** Ajusta el stock de una talla a un valor exacto (registra movimiento). */
+/** Ajusta el stock de una variante (color + talla) a un valor exacto (registra movimiento). */
 export async function adjustStock(
   productId: string,
+  color: string,
   size: string,
   newStock: number,
   note?: string
 ): Promise<RpcResult> {
   const { data, error } = await supabase.rpc("nat_adjust_stock", {
     p_product_id: productId,
+    p_color: color,
     p_size: size,
     p_new_stock: newStock,
     p_note: note ?? "Ajuste manual",

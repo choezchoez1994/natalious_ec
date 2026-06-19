@@ -14,6 +14,7 @@ export interface Category {
 export interface SizeRow {
   id: string;
   product_id: string;
+  color: string; // '' = producto sin colores (compat). Variante = (product_id, color, name)
   name: string;
   stock: number;
   blocked: boolean;
@@ -34,6 +35,7 @@ export interface ColorRow {
 export interface ImageRow {
   id: string;
   product_id: string;
+  color: string; // '' = imagen general/fallback; si no, pertenece a ese color
   url: string | null;
   storage_path: string | null;
   is_principal: boolean;
@@ -69,12 +71,22 @@ export interface RawProduct extends ProductRow {
 
 export type AvailKey = "stock" | "pocas" | "agotado" | "pedido";
 
-export interface EffectiveSize {
+export interface EffectiveSizeColor {
   name: string;
+  hex: string;
   stock: number;
   blocked: boolean;
   reason: string;
   available: boolean; // !blocked && stock > 0
+}
+
+export interface EffectiveSize {
+  name: string;
+  stock: number; // suma del stock de sus colores
+  blocked: boolean;
+  reason: string;
+  available: boolean; // algún color con stock disponible
+  colors: EffectiveSizeColor[]; // colores presentes en esta talla (modelo talla → color)
 }
 
 export interface EffectiveColor {
@@ -82,7 +94,9 @@ export interface EffectiveColor {
   hex: string;
   blocked: boolean;
   reason: string;
-  soldOut: boolean;
+  stock: number; // suma del stock del color en todas las tallas
+  soldOut: boolean; // blocked || todas bloqueadas || (stock<=0 sin backorder)
+  images: ImageRow[]; // imágenes de este color (con fallback a las generales)
 }
 
 export interface EffectiveProduct extends RawProduct {

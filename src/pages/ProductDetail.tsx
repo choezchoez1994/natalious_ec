@@ -50,7 +50,6 @@ export function ProductDetail() {
 
   const p = id ? productById(id) : undefined;
 
-  const needColor = !!p && !p.noColors && p.effColors.length > 0;
   const needSize = !!p && !p.noSizes && p.effSizes.length > 0;
 
   const [color, setColor] = useState<string | null>(null);
@@ -63,9 +62,14 @@ export function ProductDetail() {
 
   useEffect(() => {
     if (!p) return;
-    setColor(needColor ? p.effColors.find((c) => !c.blocked)?.name ?? null : null);
-    setSize(needSize ? p.effSizes.find((s) => s.available)?.name ?? null : null);
-    setActiveImg(p.principalImage);
+    // talla primero, luego color disponible de esa talla
+    const s0 = needSize ? (p.effSizes.find((s) => s.available) ?? p.effSizes[0])?.name ?? null : null;
+    setSize(s0);
+    const cols0 = s0 ? p.effSizes.find((s) => s.name === s0)?.colors ?? [] : [];
+    const c0 = cols0.find((c) => c.available)?.name ?? cols0[0]?.name ?? null;
+    setColor(c0);
+    const imgs0 = c0 ? p.effColors.find((c) => c.name === c0)?.images ?? [] : [];
+    setActiveImg(imgs0[0]?.url ?? p.principalImage);
     setWarn(false);
     setQty(1);
     window.scrollTo(0, 0);
@@ -91,11 +95,16 @@ export function ProductDetail() {
     );
   }
 
+  const selSize = needSize && size ? p.effSizes.find((s) => s.name === size) : undefined;
+  const sizeColors = selSize ? selSize.colors : [];
+  const needColor = !p.noColors && sizeColors.length > 0;
+  const selColor = color ? p.effColors.find((c) => c.name === color) : undefined;
+
   const estado = p.stock > 0 ? "Disponible" : p.backorderActive ? "Bajo pedido" : "Agotado";
-  const sizeStock = size ? availableStock(p, size) : p.stock;
+  const sizeStock = size ? availableStock(p, color ?? "", size) : p.stock;
   const maxQty = p.backorderActive ? 99999 : sizeStock;
   const cat = categories.find((c) => c.id === p.category_id);
-  const gallery = p.images;
+  const gallery = selColor && selColor.images.length ? selColor.images : p.images;
   const waHref = waLinkProduct(config.wa, p, { color: color || "Único", size: size || "Única", estado });
 
   const addCart = () => {
@@ -156,25 +165,27 @@ export function ProductDetail() {
 
           <div style={{ marginBottom: 16 }}><PriceBlock p={p} big /></div>
 
-          {needColor && (
-            <div style={{ marginBottom: 18 }}>
-              <Label>Color: <strong>{color || "elige una opción"}</strong></Label>
-              <ColorChips colors={p.effColors} selectable selected={color} onSelect={(n) => { setColor(n); setWarn(false); }} size={30} />
-            </div>
-          )}
-
           {needSize && (
-            <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 18 }}>
               <Label>Talla</Label>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {p.effSizes.map((s) => {
-                  const dis = s.blocked || (s.stock <= 0 && !p.backorderActive);
+                  const dis = !s.available && !p.backorderActive;
                   return (
                     <button
                       key={s.name}
-                      onClick={() => { if (!dis) { setSize(s.name); setQty(1); setWarn(false); } }}
+                      onClick={() => {
+                        if (dis) return;
+                        setSize(s.name);
+                        const cs = s.colors;
+                        const c0 = cs.find((c) => c.available)?.name ?? cs[0]?.name ?? null;
+                        setColor(c0);
+                        setActiveImg(p.effColors.find((c) => c.name === c0)?.images[0]?.url ?? p.principalImage);
+                        setQty(1);
+                        setWarn(false);
+                      }}
                       disabled={dis}
-                      title={s.blocked ? s.reason || "No disponible" : s.stock <= 0 ? "Agotada" : ""}
+                      title={dis ? "Agotada" : ""}
                       className={"nat-size" + (size === s.name ? " is-active" : "") + (dis ? " is-dis" : "")}
                     >
                       {s.name}
@@ -185,11 +196,29 @@ export function ProductDetail() {
             </div>
           )}
 
+          {needColor && (
+            <div style={{ marginBottom: 16 }}>
+              <Label>Color: <strong>{color || "elige una opción"}</strong></Label>
+              <ColorChips
+                colors={sizeColors.map((c) => ({ name: c.name, hex: c.hex, soldOut: !c.available }))}
+                selectable
+                selected={color}
+                onSelect={(n) => {
+                  setColor(n);
+                  setActiveImg(p.effColors.find((c) => c.name === n)?.images[0]?.url ?? p.principalImage);
+                  setQty(1);
+                  setWarn(false);
+                }}
+                size={30}
+              />
+            </div>
+          )}
+
           {warn && (
             <div className="nat-stockhint is-out" style={{ marginBottom: 14 }}>
-              Selecciona {needColor && !color ? "un color" : ""}
-              {needColor && !color && needSize && !size ? " y " : ""}
-              {needSize && !size ? "una talla" : ""} antes de agregar.
+              Selecciona {needSize && !size ? "una talla" : ""}
+              {needSize && !size && needColor && !color ? " y " : ""}
+              {needColor && !color ? "un color" : ""} antes de agregar.
             </div>
           )}
           {addMsg && <div className={"nat-movemsg " + (addMsg.ok ? "ok" : "err")} style={{ marginBottom: 12 }}>{addMsg.t}</div>}

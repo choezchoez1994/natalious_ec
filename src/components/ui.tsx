@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { Sparkle } from "./icons";
 import { money } from "../lib/format";
 import { AVAIL } from "../lib/types";
-import type { AvailKey, EffectiveColor, EffectiveProduct } from "../lib/types";
+import type { AvailKey, EffectiveProduct } from "../lib/types";
 
 /* Logotipo natalious */
 export function Wordmark({
@@ -63,7 +63,7 @@ export function ColorChips({
   size = 22,
   max,
 }: {
-  colors: EffectiveColor[];
+  colors: { name: string; hex: string; soldOut: boolean }[];
   selectable?: boolean;
   selected?: string | null;
   onSelect?: (name: string) => void;
