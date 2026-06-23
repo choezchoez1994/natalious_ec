@@ -6,6 +6,7 @@ dist-ssr
 .env
 .env.*
 !.env.example
+!.env.development.example
 .DS_Store
 _design_reference
 .vite

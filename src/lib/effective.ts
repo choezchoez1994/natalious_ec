@@ -19,8 +19,15 @@ import type {
  *  - Un color está agotado si está bloqueado, todas sus tallas están bloqueadas, o no tiene
  *    stock y el producto no admite backorder.
  */
-export function effective(p: RawProduct): EffectiveProduct {
-  const sizesAll = [...(p.sizes || [])].sort((a, b) => a.sort - b.sort);
+export function effective(p: RawProduct, sizeRank?: Map<string, number>): EffectiveProduct {
+  // Orden canónico de tallas: posición en el catálogo global (cat_sizes), definido por el
+  // admin. Las tallas sin entrada en el catálogo (personalizadas) van al final, conservando
+  // su orden de inserción (`sort`).
+  const rankOf = (name: string) =>
+    sizeRank?.has(name) ? (sizeRank.get(name) as number) : Number.MAX_SAFE_INTEGER;
+  const sizesAll = [...(p.sizes || [])].sort(
+    (a, b) => rankOf(a.name) - rankOf(b.name) || a.sort - b.sort
+  );
   const colorsSorted = [...(p.colors || [])].sort((a, b) => a.sort - b.sort);
   const imagesAll = [...(p.images || [])].sort((a, b) => a.sort - b.sort);
 
@@ -81,7 +88,11 @@ export function effective(p: RawProduct): EffectiveProduct {
         colors,
       };
     })
-    .sort((a, b) => (sizeOrder.get(a.name) ?? 0) - (sizeOrder.get(b.name) ?? 0));
+    .sort(
+      (a, b) =>
+        rankOf(a.name) - rankOf(b.name) ||
+        (sizeOrder.get(a.name) ?? 0) - (sizeOrder.get(b.name) ?? 0)
+    );
   const noSizes = effSizes.length === 0;
 
   const stock = noSizes

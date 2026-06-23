@@ -106,6 +106,14 @@ export async function fetchCatalog(): Promise<CatalogData> {
   const costById: Record<string, number> = {};
   costs.forEach((c: { product_id: string; cost: number }) => (costById[c.product_id] = c.cost));
 
+  // Ranking global de tallas (orden definido por el admin en cat_sizes). Se indexa por id y
+  // por label para tolerar diferencias de mayúsculas entre el catálogo y product_sizes.name.
+  const sizeRank = new Map<string, number>();
+  (catSizesRes.data ?? []).forEach((s: any, i: number) => {
+    if (s.id != null) sizeRank.set(String(s.id), i);
+    if (s.label != null) sizeRank.set(String(s.label), i);
+  });
+
   const rawById: Record<string, RawProduct> = {};
   const products: EffectiveProduct[] = (productsRes.data ?? []).map((p: any) => {
     const raw: RawProduct = {
@@ -117,7 +125,7 @@ export async function fetchCatalog(): Promise<CatalogData> {
       cost: costById[p.id] ?? 0,
     };
     rawById[p.id] = raw;
-    return effective(raw);
+    return effective(raw, sizeRank);
   });
   products.sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()

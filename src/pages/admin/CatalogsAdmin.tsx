@@ -10,6 +10,7 @@ import {
   deleteNamedCat,
   deleteSizeCat,
   deleteTextCat,
+  reorderSizeCats,
   updateNamedCat,
   updateTextCat,
 } from "../../services/catalogs";
@@ -135,16 +136,29 @@ function NamedCatSection({ title, hint, table, items, reload }: { title: string;
 
 function SizesSection({ items, reload }: { items: CatItem[]; reload: () => Promise<void> }) {
   const confirm = useConfirm();
+  // Mueve una talla una posición (delta -1 = arriba, +1 = abajo) y persiste el nuevo orden.
+  const move = async (idx: number, delta: number) => {
+    const next = idx + delta;
+    if (next < 0 || next >= items.length) return;
+    const ids = items.map((s) => s.id);
+    [ids[idx], ids[next]] = [ids[next], ids[idx]];
+    await reorderSizeCats(ids);
+    await reload();
+  };
   return (
     <ACard>
       <h3 className="nat-editor-h" style={{ marginBottom: 4 }}>Tallas</h3>
-      <p className="nat-editor-sub">Tallas disponibles para asignar a productos (S, M, L, …).</p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-        {items.map((it) => (
-          <span key={it.id} className="nat-opt-row" style={{ padding: "6px 8px 6px 12px", gap: 6 }}>
+      <p className="nat-editor-sub">Tallas disponibles para asignar a productos (S, M, L, …). El orden definido aquí es el que se usa en el catálogo público y en inventario.</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {items.map((it, idx) => (
+          <div key={it.id} className="nat-opt-row" style={{ gap: 6 }}>
             <span className="nat-opt-name">{it.label}</span>
-            <button className="nat-tagx" style={{ width: 24, height: 24 }} title="Eliminar" onClick={async () => { if (await confirm({ title: "Eliminar talla", message: "¿Eliminar talla “" + it.label + "”?", confirmLabel: "Eliminar", danger: true })) { await deleteSizeCat(it.id); await reload(); } }}>✕</button>
-          </span>
+            <div style={{ display: "flex", gap: 4, marginLeft: "auto" }}>
+              <button className="nat-btn-ghost" style={{ width: 28, height: 28, padding: 0, flex: "none", opacity: idx === 0 ? 0.35 : 1 }} title="Subir" disabled={idx === 0} onClick={() => move(idx, -1)}>↑</button>
+              <button className="nat-btn-ghost" style={{ width: 28, height: 28, padding: 0, flex: "none", opacity: idx === items.length - 1 ? 0.35 : 1 }} title="Bajar" disabled={idx === items.length - 1} onClick={() => move(idx, 1)}>↓</button>
+              <button className="nat-tagx" style={{ width: 28, height: 28 }} title="Eliminar" onClick={async () => { if (await confirm({ title: "Eliminar talla", message: "¿Eliminar talla “" + it.label + "”?", confirmLabel: "Eliminar", danger: true })) { await deleteSizeCat(it.id); await reload(); } }}>✕</button>
+            </div>
+          </div>
         ))}
         {items.length === 0 && <p className="nat-editor-sub" style={{ margin: 0 }}>Sin tallas.</p>}
       </div>

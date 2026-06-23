@@ -62,6 +62,12 @@ export async function addSizeCat(id: string, label: string): Promise<void> {
 export async function deleteSizeCat(id: string): Promise<void> {
   await supabase.from("cat_sizes").delete().eq("id", id);
 }
+/** Reescribe el orden de las tallas según la secuencia de ids recibida. */
+export async function reorderSizeCats(orderedIds: string[]): Promise<void> {
+  await Promise.all(
+    orderedIds.map((id, i) => supabase.from("cat_sizes").update({ sort: i }).eq("id", id))
+  );
+}
 
 // ---------- categorías ----------
 function slugify(s: string): string {
