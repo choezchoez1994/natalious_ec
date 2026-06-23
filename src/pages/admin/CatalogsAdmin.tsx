@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { ReactNode } from "react";
 import { ACard, ASectionTitle, AInput, AToggle, LocalInput } from "../../components/form";
 import { Spinner } from "../../components/ui";
 import { useConfirm } from "../../components/ConfirmDialog";
@@ -167,29 +168,105 @@ function SizesSection({ items, reload }: { items: CatItem[]; reload: () => Promi
   );
 }
 
+type GroupKey = "productos" | "ordenes" | "pagos" | "contacto";
+
 export function CatalogsAdmin() {
   const { catalogs, loading, reload } = useCatalog();
+  const [group, setGroup] = useState<GroupKey>("productos");
   if (loading) return <Spinner />;
+
+  const groups: { key: GroupKey; label: string; desc: string; count: number; render: () => ReactNode }[] = [
+    {
+      key: "productos",
+      label: "Productos",
+      desc: "Estados que puede tener un producto y las tallas disponibles para asignar.",
+      count: catalogs.productStates.length + catalogs.sizes.length,
+      render: () => (
+        <>
+          <TextCatSection title="Estados de producto" hint="disponible, bajo pedido, agotado, inactivo." table="cat_product_states" items={catalogs.productStates} reload={reload} />
+          <SizesSection items={catalogs.sizes} reload={reload} />
+        </>
+      ),
+    },
+    {
+      key: "ordenes",
+      label: "Órdenes e inventario",
+      desc: "Estados por los que pasa una orden y motivos que justifican los movimientos de stock.",
+      count: catalogs.orderStates.length + catalogs.movementReasons.length,
+      render: () => (
+        <>
+          <OrderStatesSection items={catalogs.orderStates} reload={reload} />
+          <MovementReasonsSection items={catalogs.movementReasons} reload={reload} />
+        </>
+      ),
+    },
+    {
+      key: "pagos",
+      label: "Pagos",
+      desc: "Cómo y en qué estado se cobra, y los bancos de origen para transferencias.",
+      count: catalogs.paymentMethods.length + catalogs.paymentStatuses.length + catalogs.banks.length,
+      render: () => (
+        <>
+          <TextCatSection title="Métodos de pago" hint="transferencia, efectivo, contra entrega, otro." table="cat_payment_methods" items={catalogs.paymentMethods} reload={reload} />
+          <TextCatSection title="Estados de pago" hint="pendiente, pagado, parcial, rechazado." table="cat_payment_statuses" items={catalogs.paymentStatuses} reload={reload} />
+          <NamedCatSection title="Bancos" hint="Banco de origen para transferencias." table="cat_banks" items={catalogs.banks} reload={reload} />
+        </>
+      ),
+    },
+    {
+      key: "contacto",
+      label: "Contacto",
+      desc: "De dónde llega cada cliente: sitio web, redes, referido, local físico, etc.",
+      count: catalogs.channels.length,
+      render: () => (
+        <TextCatSection title="Canales de contacto" hint="sitio web, redes, referido, local físico, etc." table="cat_channels" items={catalogs.channels} reload={reload} />
+      ),
+    },
+  ];
+
+  const active = groups.find((g) => g.key === group) ?? groups[0];
 
   return (
     <div>
       <ASectionTitle kicker="Configuración" title="Catálogos configurables" />
       <p style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontSize: 13, color: "var(--ink)", opacity: 0.6, margin: "-6px 0 16px" }}>
-        Estados, bancos, métodos de pago, estados de pago, motivos de movimiento y canales de contacto.
+        Listas reutilizables del sistema. Elige un grupo para editar sus catálogos.
       </p>
-      <div className="nat-admin-2col" style={{ alignItems: "start" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <TextCatSection title="Estados de producto" hint="disponible, bajo pedido, agotado, inactivo." table="cat_product_states" items={catalogs.productStates} reload={reload} />
-          <OrderStatesSection items={catalogs.orderStates} reload={reload} />
-          <MovementReasonsSection items={catalogs.movementReasons} reload={reload} />
-          <SizesSection items={catalogs.sizes} reload={reload} />
+
+      <div style={{ overflowX: "auto", paddingBottom: 4, marginBottom: 18 }}>
+        <div className="nat-seg" role="tablist" style={{ minWidth: "min-content" }}>
+          {groups.map((g) => (
+            <button
+              key={g.key}
+              role="tab"
+              aria-selected={g.key === group}
+              className={"nat-seg-btn" + (g.key === group ? " is-active" : "")}
+              style={{ display: "inline-flex", alignItems: "center", gap: 7, whiteSpace: "nowrap" }}
+              onClick={() => setGroup(g.key)}
+            >
+              {g.label}
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  borderRadius: 999,
+                  padding: "1px 7px",
+                  background: g.key === group ? "rgba(255,255,255,0.22)" : "rgba(22,21,15,0.08)",
+                }}
+              >
+                {g.count}
+              </span>
+            </button>
+          ))}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <TextCatSection title="Métodos de pago" hint="transferencia, efectivo, contra entrega, otro." table="cat_payment_methods" items={catalogs.paymentMethods} reload={reload} />
-          <TextCatSection title="Estados de pago" hint="pendiente, pagado, parcial, rechazado." table="cat_payment_statuses" items={catalogs.paymentStatuses} reload={reload} />
-          <TextCatSection title="Canales de contacto" hint="sitio web, redes, referido, local físico, etc." table="cat_channels" items={catalogs.channels} reload={reload} />
-          <NamedCatSection title="Bancos" hint="Banco de origen para transferencias." table="cat_banks" items={catalogs.banks} reload={reload} />
-        </div>
+      </div>
+
+      <p style={{ fontFamily: "'Hanken Grotesk',sans-serif", fontSize: 12.5, color: "var(--ink)", opacity: 0.55, margin: "0 0 16px" }}>
+        {active.desc}
+      </p>
+
+      <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", alignItems: "start" }}>
+        {active.render()}
       </div>
     </div>
   );
