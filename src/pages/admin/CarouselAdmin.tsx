@@ -55,9 +55,10 @@ function SlideCard({ s, index, total, reload }: { s: Slide; index: number; total
         <div className="nat-slidecard-img">
           <div style={{ height: 7, background: "var(--teal)" }} />
           <button onClick={() => fileRef.current?.click()} style={{ display: "block", width: "100%", border: "none", padding: 0, cursor: "pointer", background: "none" }} title="Cambiar imagen">
-            <ImageSlot url={s.image_url} ratio="16 / 10" placeholder={busy ? "Subiendo…" : "Subir imagen de la diapositiva"} />
+            <ImageSlot url={s.image_url} ratio="12 / 5" placeholder={busy ? "Subiendo…" : "Subir imagen de la diapositiva"} />
           </button>
           <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onPick} />
+          <p className="nat-editor-sub" style={{ padding: "8px 12px 12px", margin: 0 }}>Recomendado: panorámica <strong>2.4:1</strong> (1920 × 800 px), motivo centrado en la zona segura del medio. JPG/WebP &lt; 500 KB.</p>
         </div>
 
         <div className="nat-slidecard-form">
