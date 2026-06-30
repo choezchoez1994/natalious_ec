@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { Icon, Sparkle } from "./icons";
+import { Icon } from "./icons";
 import { Wordmark } from "./ui";
 import { useCart } from "../store/CartContext";
 import { useCatalog } from "../store/CatalogContext";
