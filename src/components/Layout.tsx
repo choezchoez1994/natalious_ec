@@ -84,10 +84,10 @@ function Footer() {
         <div className="nat-footer-brand">
           <Wordmark size={34} light align="left" />
           <p style={{ margin: "16px 0 0", maxWidth: 280, fontFamily: "'Bodoni Moda', serif", fontStyle: "italic", fontSize: 16, color: "var(--paper)", opacity: 0.82, lineHeight: 1.5 }}>
-            Fuerte, bella y auténtica. Ropa deportiva premium, hecha en Ecuador.
+            Fuerte, bella y auténtica. Ropa en tendencia - Envíos seguro.
           </p>
           {config.wa.enabled && (
-            <a href={waLinkGeneral(config.wa)} target="_blank" rel="noreferrer" className="nat-btn-wa" style={{ marginTop: 22 }}>
+            <a href={waLinkGeneral(config.wa)} target="_blank" rel="noreferrer" className="nat-btn-wa nat-btn-wa--footer" style={{ marginTop: 22 }}>
               {Icon.whatsapp(false)} Escríbenos por WhatsApp
             </a>
           )}
@@ -106,7 +106,6 @@ function Footer() {
             <h4 className="nat-footer-h">Contacto</h4>
             <a className="nat-footer-meta nat-footlink" href={waLinkGeneral(config.wa)} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>{fmtPhone(config.wa.number)}</a>
             <span className="nat-footer-meta">{config.wa.hours}</span>
-            <span className="nat-footer-meta">Envíos a todo Ecuador</span>
           </div>
           <div className="nat-footer-col">
             <h4 className="nat-footer-h">Síguenos</h4>
@@ -116,14 +115,7 @@ function Footer() {
         </div>
       </div>
       <div className="nat-shell nat-footer-bottom">
-        <span>© {new Date().getFullYear()} natalious · Hecho con <Sparkle size={10} color="var(--paper)" /> en Ecuador</span>
-        <Link to="/admin" className="nat-admin-link" title="Acceso administradora">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="5" y="11" width="14" height="9" rx="2" />
-            <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-          </svg>
-          Administración
-        </Link>
+        <span>© {new Date().getFullYear()} natalious</span>
       </div>
     </footer>
   );

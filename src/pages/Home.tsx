@@ -6,7 +6,7 @@ import { Sparkle, BenefitIcon } from "../components/icons";
 import { useCatalog } from "../store/CatalogContext";
 
 function TrustBar() {
-  const items = ["Envíos a todo Ecuador", "Pago contra entrega", "Atención por WhatsApp", "Precio al por mayor"];
+  const items = ["Envíos a todo Ecuador", "Atención personalizada por Whatsapp", "Precios especiales"];
   return (
     <div className="nat-trustbar">
       {items.map((t, i) => (

@@ -93,6 +93,8 @@ button { font-family: inherit; }
 }
 .nat-btn-wa:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(31, 157, 87, 0.4); }
 .nat-btn-wa--block { width: 100%; padding: 16px; font-size: 16px; }
+.nat-btn-wa--footer { background: var(--paper); color: var(--plum); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24); }
+.nat-btn-wa--footer:hover { box-shadow: 0 12px 26px rgba(0, 0, 0, 0.32); }
 
 .nat-back {
   display: inline-flex; align-items: center; gap: 6px; background: none; border: none; cursor: pointer;
@@ -157,10 +159,8 @@ button { font-family: inherit; }
 .nat-footer-h { margin: 0 0 10px; font-family: 'Hanken Grotesk', sans-serif; font-weight: 700; font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--paper); opacity: .5; }
 .nat-footer-meta { font-family: 'Hanken Grotesk', sans-serif; font-size: 13px; color: var(--paper); opacity: .6; padding: 4px 0; }
 .nat-footlink:hover { opacity: 1 !important; text-decoration: underline; }
-.nat-footer-bottom { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 16px 20px; border-top: 1px solid rgba(255, 255, 255, 0.12); font-family: 'Hanken Grotesk', sans-serif; font-size: 12px; color: var(--paper); }
+.nat-footer-bottom { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; padding: 16px 20px; border-top: 1px solid rgba(255, 255, 255, 0.12); font-family: 'Hanken Grotesk', sans-serif; font-size: 12px; color: var(--paper); }
 .nat-footer-bottom > span { opacity: .6; display: inline-flex; align-items: center; gap: 5px; }
-.nat-admin-link { display: inline-flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.08); color: var(--paper); border: 1px solid rgba(255, 255, 255, 0.16); cursor: pointer; padding: 6px 12px; border-radius: 999px; font-family: 'Hanken Grotesk', sans-serif; font-size: 12px; font-weight: 600; opacity: .75; text-decoration: none; }
-.nat-admin-link:hover { opacity: 1; background: rgba(255, 255, 255, 0.14); }
 @media (min-width: 860px) { .nat-footer { padding-bottom: 0; } }
 
 /* admin shell */
